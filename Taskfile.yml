@@ -35,14 +35,14 @@ tasks:
         exit 1
       fi
     - echo 'Creating migration file for {{.NAME}}...'
-    - tern new -m ./internal/database/migrations {{.NAME}}
+    - tern new -m ./database/migrations {{.NAME}}
 
   migrations:up:
     desc: apply all up database migrations
     deps: [ confirm ]
     cmds:
     - echo 'Running up migrations...'
-    - tern migrate -m ./internal/database/migrations --conn-string {{.GOBOOKING_DB_DSN}}
+    - tern migrate -m ./database/migrations --conn-string {{.GOBOOKING_DB_DSN}}
 
   tidy:
     desc: format all .go files, and tidy and vendor module dependencies
