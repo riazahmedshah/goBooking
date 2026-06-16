@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/riazahmedshah/go-booking/config"
+	"github.com/riazahmedshah/go-booking/internal/config"
 )
 
-var Pool *pgxpool.Pool
+var DB *pgxpool.Pool
 
 const DatabasePingTimeout = 10
 
@@ -38,7 +38,7 @@ func New(cfg *config.Config) (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("failed to create pgx pool: %w", err)
 	}
 
-	Pool = pool
+	DB = pool
 
 	ctx, cancel := context.WithTimeout(context.Background(), DatabasePingTimeout*time.Second)
 	defer cancel()
@@ -46,5 +46,5 @@ func New(cfg *config.Config) (*pgxpool.Pool, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
-	return Pool, nil
+	return DB, nil
 }

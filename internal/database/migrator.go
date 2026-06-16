@@ -9,7 +9,7 @@ import (
 	"net"
 	"net/url"
 
-	"github.com/riazahmedshah/go-booking/config"
+	"github.com/riazahmedshah/go-booking/internal/config"
 
 	"github.com/jackc/pgx/v5"
 	tern "github.com/jackc/tern/v2/migrate"
