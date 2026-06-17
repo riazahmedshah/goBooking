@@ -12,7 +12,7 @@ type PropertyRepository struct {
 	server *server.Server
 }
 
-func NewPropertryRepository(server *server.Server) *PropertyRepository {
+func NewPropertyRepository(server *server.Server) *PropertyRepository {
 	return &PropertyRepository{server: server}
 }
 
@@ -23,8 +23,8 @@ func (p *PropertyRepository) Createproperty(ctx context.Context, hostID int, pay
 			title,
 			sub_title,
 			image,
-			address_id
-			max_guest
+			address_id,
+			max_guests
 		)
 		VALUES (
 			@host_id,
@@ -32,9 +32,9 @@ func (p *PropertyRepository) Createproperty(ctx context.Context, hostID int, pay
 			@sub_title,
 			@image,
 			@address_id,
-			@max_guest
+			@max_guests
 		)
-		RETURNING
+		RETURNING *
 	`
 
 	rows, err := p.server.DB.Query(ctx, stmt, pgx.NamedArgs{
@@ -43,7 +43,7 @@ func (p *PropertyRepository) Createproperty(ctx context.Context, hostID int, pay
 		"sub_title":  payload.SubTitle,
 		"image":      payload.Image,
 		"address_id": payload.AddressID,
-		"max_guest":  payload.MaxGuests,
+		"max_guests": payload.MaxGuests,
 	})
 
 	if err != nil {
@@ -56,4 +56,39 @@ func (p *PropertyRepository) Createproperty(ctx context.Context, hostID int, pay
 	}
 
 	return &propertyItem, nil
+}
+
+func (p *PropertyRepository) GetPropertyByID(ctx context.Context, propertyID int) (*Property, error) {
+	stmt := `
+		SELECT
+			id,
+			title,
+			subtitle,
+			image,
+			address_id,
+			host_id,
+			created-at,
+			updated_at
+		FROM
+			properties
+		WHERE
+			id = @id
+		`
+
+	rows, err := p.server.DB.Query(ctx, stmt, pgx.NamedArgs{
+		"id": propertyID,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute get property by id for property_id %v: %w", propertyID, err)
+	}
+
+	propertyItem, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Property])
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect row from table:properties for property_id=%d: %w", propertyID, err)
+	}
+
+	return &propertyItem, nil
+
 }
