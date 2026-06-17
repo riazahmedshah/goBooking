@@ -7,7 +7,6 @@ type CreatePropertyPayload struct {
 	SubTitle  *string `json:"subTitle" validate:"omitempty,max=1000"`
 	Image     *string `json:"image" validate:"omitempty"`
 	AddressID *int    `json:"addressId" validate:"required"`
-	HostID    *int    `json:"hostId" validate:"required"`
 	MaxGuests *int    `json:"maxGuest" validate:"omitempty,min=1"`
 }
 
