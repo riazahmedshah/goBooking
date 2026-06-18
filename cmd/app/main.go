@@ -10,9 +10,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/labstack/echo/v4"
 	"github.com/riazahmedshah/go-booking/internal/config"
+	"github.com/riazahmedshah/go-booking/internal/handler"
+	"github.com/riazahmedshah/go-booking/internal/repository"
+	"github.com/riazahmedshah/go-booking/internal/router"
 	"github.com/riazahmedshah/go-booking/internal/server"
+	"github.com/riazahmedshah/go-booking/internal/service"
 )
 
 func main() {
@@ -27,9 +30,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	e := echo.New()
+	repos := repository.NewRepositories(srv)
+	service, err := service.NewService(srv, repos)
+	if err != nil {
+		slog.Error("failed to create service", "error", err)
+		os.Exit(1)
+	}
 
-	srv.SetupHTTPServer(e)
+	handler := handler.NewHandler(srv, service)
+
+	router := router.NewRouter(srv, handler)
+
+	srv.SetupHTTPServer(router)
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
