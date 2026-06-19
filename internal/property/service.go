@@ -1,6 +1,10 @@
 package property
 
-import "github.com/riazahmedshah/go-booking/internal/server"
+import (
+	"context"
+
+	"github.com/riazahmedshah/go-booking/internal/server"
+)
 
 type PropertyService struct {
 	server       *server.Server
@@ -12,4 +16,13 @@ func NewPropertyService(server *server.Server, propertyRepo *PropertyRepository)
 		server:       server,
 		propertyRepo: propertyRepo,
 	}
+}
+
+func (p *PropertyService) CreateProperty(ctx context.Context, hostID int, payload *CreatePropertyPayload) (*Property, error) {
+	property, err := p.propertyRepo.Createproperty(ctx, hostID, payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return property, nil
 }

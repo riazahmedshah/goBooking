@@ -15,4 +15,16 @@ func (p *CreatePropertyPayload) Validate() error {
 	return validate.Struct(p)
 }
 
+type UpdatePropertyPayload struct {
+	SubTitle  *string `json:"subTitle" validate:"omitempty,max=1000"`
+	Image     *string `json:"image" validate:"omitempty"`
+	AddressID *int    `json:"addressId" validate:"omitempty"`
+	MaxGuests *int    `json:"maxGuest" validate:"omitempty,min=1"`
+}
+
+func (p *UpdatePropertyPayload) Validate() error {
+	validate := validator.New()
+	return validate.Struct(p)
+}
+
 // TODO: other payloads...

@@ -22,10 +22,9 @@ type Action struct {
 }
 
 type HTTPError struct {
-	Code     string `json:"code"`
-	Message  string `json:"message"`
-	Status   int    `json:"status"`
-	Override bool   `json:"override"`
+	Code    string `json:"code"`
+	Message string `json:"message"`
+	Status  int    `json:"status"`
 	// field level errors
 	Errors []FieldError `json:"errors"`
 	// action to be taken
@@ -44,12 +43,11 @@ func (e *HTTPError) Is(target error) bool {
 
 func (e *HTTPError) WithMessage(message string) *HTTPError {
 	return &HTTPError{
-		Code:     e.Code,
-		Message:  message,
-		Status:   e.Status,
-		Override: e.Override,
-		Errors:   e.Errors,
-		Action:   e.Action,
+		Code:    e.Code,
+		Message: message,
+		Status:  e.Status,
+		Errors:  e.Errors,
+		Action:  e.Action,
 	}
 }
 
