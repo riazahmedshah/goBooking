@@ -42,13 +42,13 @@ func (r *BookingRepository) CreateBooking(ctx context.Context, payload *CreateBo
 		"status":      payload.Status,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute create booking query for user_id=%d property_id=%d: %w", *payload.UserID, *payload.PropertyID, err)
+		return nil, fmt.Errorf("failed to execute create booking query for user_id=%v property_id=%v: %w", payload.UserID, *payload.PropertyID, err)
 	}
 	defer rows.Close()
 
 	bookingItem, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Booking])
 	if err != nil {
-		return nil, fmt.Errorf("failed to collect row from table:bookings for user_id=%d property_id=%d: %w", *payload.UserID, *payload.PropertyID, err)
+		return nil, fmt.Errorf("failed to collect row from table:bookings for user_id=%v property_id=%v: %w", *payload.UserID, *payload.PropertyID, err)
 	}
 
 	return &bookingItem, nil
@@ -74,13 +74,13 @@ func (r *BookingRepository) CreateIdempotencyKey(ctx context.Context, idemKey *C
 		"booking_id": bookingId,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute create idempotency key query for key=%s booking_id=%d: %w", *idemKey.IdemKey, bookingId, err)
+		return nil, fmt.Errorf("failed to execute create idempotency key query for key=%v booking_id=%v: %w", *idemKey.IdemKey, bookingId, err)
 	}
 	defer rows.Close()
 
 	idemKeyItem, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[IdempotencyKey])
 	if err != nil {
-		return nil, fmt.Errorf("failed to collect row from table:idempotency_keys for key=%s booking_id=%d: %w", *idemKey.IdemKey, bookingId, err)
+		return nil, fmt.Errorf("failed to collect row from table:idempotency_keys for key=%v booking_id=%v: %w", *idemKey.IdemKey, bookingId, err)
 	}
 
 	return &idemKeyItem, nil
@@ -112,7 +112,7 @@ func (r *BookingRepository) FinalizeIdempotencyKey(ctx context.Context, key stri
 		"idem_key": key,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to execute finalize idempotency key query for key=%s: %w", key, err)
+		return fmt.Errorf("failed to execute finalize idempotency key query for key=%v: %w", key, err)
 	}
 	return nil
 }
@@ -140,7 +140,7 @@ func (r *BookingRepository) GetIdempotencyKeyWithLock(ctx context.Context, key s
 
 	idemKeyItem, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[IdempotencyKey])
 	if err != nil {
-		return nil, fmt.Errorf("failed to collect row from table:idempotency_keys for key=%s: %w", key, err)
+		return nil, fmt.Errorf("failed to collect row from table:idempotency_keys for key=%v: %w", key, err)
 	}
 
 	return &idemKeyItem, nil
