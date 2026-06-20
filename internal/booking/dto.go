@@ -15,7 +15,8 @@ func (p *CreateBookingPayload) Validate() error {
 }
 
 type ConfirmBookingPayload struct {
-	Status *string `json:"status" validate:"required,oneof=pending confirmed cancelled"`
+	BookingID *int    `json:"bookingId" validate:"required"`
+	Status    *string `json:"status" validate:"omitempty,oneof=pending confirmed cancelled"`
 }
 
 func (p *ConfirmBookingPayload) Validate() error {
@@ -24,7 +25,7 @@ func (p *ConfirmBookingPayload) Validate() error {
 }
 
 type CreateIdempotencyKeyPayload struct {
-	Key *string `json:"key" validate:"required"`
+	IdemKey *string `json:"idemKey" validate:"required uuid4"`
 }
 
 func (p *CreateIdempotencyKeyPayload) Validate() error {
