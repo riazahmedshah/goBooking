@@ -1,15 +1,18 @@
 -- Write your migrate up statements here
 
-CREATE TABLE properties (
+CREATE TABLE bookings (
   id SERIAL PRIMARY KEY,
-  title TEXT NOT NULL UNIQUE,
-  sub_title TEXT,
-  image TEXT,
-  address_id INT NOT NULL, -- (Later) - REFERENCES adressess(id) ON DELETE RESTRICT
-  host_id INT NOT NULL, -- (Later) - REFERENCES hosts(id) ON DELETE RESTRICT
-  max_guests INT DEFAULT 1,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  property_id INT NOT NULL,
+  user_id INT NOT NULL,
+  total_price INT NOT NULL,
+  status TEXT
+)
+
+CREATE TABLE idempotency_keys (
+  id SERIAL PRIMARY KEY,
+  idem_key TEXT,
+  booking_id INT NOT NULL,
+  is_finalized BOOLEAN DEFAULT false
 )
 
 ---- create above / drop below ----
