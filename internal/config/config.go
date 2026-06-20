@@ -32,6 +32,7 @@ type DatabaseConfig struct {
 type RedisConfig struct {
 	Address  string `validate:"required"`
 	Password string `validate:"required"`
+	LockTTL  string `validate:"required"`
 }
 
 func getEnv(key, fallback string) string {
@@ -72,6 +73,7 @@ func LoadConfig() (*Config, error) {
 		Redis: RedisConfig{
 			Address:  getEnv("REDIS_ADDRESS", "localhost:6379"),
 			Password: getEnv("REDIS_PASSWORD", ""),
+			LockTTL:  getEnv("LOCK_TTL", "60000"),
 		},
 	}
 

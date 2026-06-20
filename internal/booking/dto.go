@@ -24,15 +24,6 @@ func (p *ConfirmBookingPayload) Validate() error {
 	return validate.Struct(p)
 }
 
-type CreateIdempotencyKeyPayload struct {
-	IdemKey *string `json:"idemKey" validate:"required uuid4"`
-}
-
-func (p *CreateIdempotencyKeyPayload) Validate() error {
-	validate := validator.New()
-	return validate.Struct(p)
-}
-
 type FinalizeIdempotencyKeyPayload struct {
 	IsFinalized *bool `json:"isFinalized" validate:"required"`
 }

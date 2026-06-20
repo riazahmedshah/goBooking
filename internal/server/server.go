@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/rueidis"
@@ -35,6 +36,10 @@ func New(cfg *config.Config) (*Server, error) {
 		ClientOption: rueidis.ClientOption{
 			InitAddress: []string{cfg.Redis.Address},
 		},
+		KeyMajority:    1,
+		NoLoopTracking: true,
+		KeyValidity:    5 * time.Minute,
+		TryNextAfter:   20 * time.Millisecond,
 	})
 
 	if err != nil {

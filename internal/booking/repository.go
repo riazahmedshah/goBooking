@@ -54,7 +54,7 @@ func (r *BookingRepository) CreateBooking(ctx context.Context, payload *CreateBo
 	return &bookingItem, nil
 }
 
-func (r *BookingRepository) CreateIdempotencyKey(ctx context.Context, idemKey *CreateIdempotencyKeyPayload, bookingId int) (*IdempotencyKey, error) {
+func (r *BookingRepository) CreateIdempotencyKey(ctx context.Context, idemKey string, bookingId int) (*IdempotencyKey, error) {
 	stmt := `
 		INSERT INTO idempotency_keys (
 			idem_key, 
@@ -70,17 +70,17 @@ func (r *BookingRepository) CreateIdempotencyKey(ctx context.Context, idemKey *C
 	`
 
 	rows, err := r.server.DB.Query(ctx, stmt, pgx.NamedArgs{
-		"idem_key":   idemKey.IdemKey,
+		"idem_key":   idemKey,
 		"booking_id": bookingId,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute create idempotency key query for key=%v booking_id=%v: %w", *idemKey.IdemKey, bookingId, err)
+		return nil, fmt.Errorf("failed to execute create idempotency key query for key=%v booking_id=%v: %w", idemKey, bookingId, err)
 	}
 	defer rows.Close()
 
 	idemKeyItem, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[IdempotencyKey])
 	if err != nil {
-		return nil, fmt.Errorf("failed to collect row from table:idempotency_keys for key=%v booking_id=%v: %w", *idemKey.IdemKey, bookingId, err)
+		return nil, fmt.Errorf("failed to collect row from table:idempotency_keys for key=%v booking_id=%v: %w", idemKey, bookingId, err)
 	}
 
 	return &idemKeyItem, nil
