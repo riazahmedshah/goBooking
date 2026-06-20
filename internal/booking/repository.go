@@ -86,30 +86,37 @@ func (r *BookingRepository) CreateIdempotencyKey(ctx context.Context, idemKey st
 	return &idemKeyItem, nil
 }
 
-func (r *BookingRepository) ConfirmBooking(ctx context.Context, payload *ConfirmBookingPayload) error {
+func (r *BookingRepository) ConfirmBooking(ctx context.Context, tx pgx.Tx, payload *ConfirmBookingPayload) (*Booking, error) {
 	stmt := `
 		UPDATE bookings
 		SET status = @status
 		WHERE id = @id
+		RETURNING *
 	`
-	_, err := r.server.DB.Exec(ctx, stmt, pgx.NamedArgs{
+	rows, err := tx.Query(ctx, stmt, pgx.NamedArgs{
 		"status": "confirmed",
 		"id":     payload.BookingID,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to execute confirm booking query for id=%d: %w", *payload.BookingID, err)
+		return nil, fmt.Errorf("failed to execute confirm booking query for id=%d: %w", *payload.BookingID, err)
 	}
-	return nil
+
+	data, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[Booking])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect row from table:bookings for id=%d: %w", *payload.BookingID, err)
+	}
+
+	return &data, nil
 }
 
-func (r *BookingRepository) FinalizeIdempotencyKey(ctx context.Context, key string) error {
+func (r *BookingRepository) FinalizeIdempotencyKey(ctx context.Context, tx pgx.Tx, key string) error {
 	stmt := `
 		UPDATE idempotency_keys
 		SET is_finalized = true
 		WHERE idem_key = @key
 	`
-	_, err := r.server.DB.Exec(ctx, stmt, pgx.NamedArgs{
-		"idem_key": key,
+	_, err := tx.Exec(ctx, stmt, pgx.NamedArgs{
+		"key": key,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to execute finalize idempotency key query for key=%v: %w", key, err)
@@ -117,7 +124,7 @@ func (r *BookingRepository) FinalizeIdempotencyKey(ctx context.Context, key stri
 	return nil
 }
 
-func (r *BookingRepository) GetIdempotencyKeyWithLock(ctx context.Context, key string) (*IdempotencyKey, error) {
+func (r *BookingRepository) GetIdempotencyKeyWithLock(ctx context.Context, tx pgx.Tx, key string) (*IdempotencyKey, error) {
 	stmt := `
 		SELECT 
 			id, 
@@ -130,18 +137,18 @@ func (r *BookingRepository) GetIdempotencyKeyWithLock(ctx context.Context, key s
 			idem_key = @key
 		FOR UPDATE
 	`
-	rows, err := r.server.DB.Query(ctx, stmt, pgx.NamedArgs{
-		"idem_key": key,
+	rows, err := tx.Query(ctx, stmt, pgx.NamedArgs{
+		"key": key,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute get idempotency key with lock query for key=%s: %w", key, err)
 	}
 	defer rows.Close()
 
-	idemKeyItem, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[IdempotencyKey])
+	idemData, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[IdempotencyKey])
 	if err != nil {
 		return nil, fmt.Errorf("failed to collect row from table:idempotency_keys for key=%v: %w", key, err)
 	}
 
-	return &idemKeyItem, nil
+	return &idemData, nil
 }

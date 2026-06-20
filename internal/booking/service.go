@@ -39,11 +39,43 @@ func (b *BookingService) CreateBooking(ctx context.Context, userID int, payload 
 		return nil, fmt.Errorf("failed to generate idempotency key: %w", err)
 	}
 
-	idem, err := b.bookingRepo.CreateIdempotencyKey(lockCtx, key, booking.ID)
+	idempotencyData, err := b.bookingRepo.CreateIdempotencyKey(lockCtx, key, booking.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create idempotency key: %w", err)
 	}
 
-	return idem.IdemKey, nil
+	return idempotencyData.IdemKey, nil
 
+}
+
+func (b *BookingService) ConfirmBooking(ctx context.Context, key string, payload *ConfirmBookingPayload) (any, error) {
+	tx, err := b.server.DB.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	idempotencyData, err := b.bookingRepo.GetIdempotencyKeyWithLock(ctx, tx, key)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get idempotency key: %w", err)
+	}
+
+	if idempotencyData.IsFinalized {
+		return nil, fmt.Errorf("booking is already finalized")
+	}
+
+	booking, err := b.bookingRepo.ConfirmBooking(ctx, tx, payload)
+	if err != nil {
+		return nil, fmt.Errorf("failed to confirm booking: %w", err)
+	}
+
+	if err := b.bookingRepo.FinalizeIdempotencyKey(ctx, tx, key); err != nil {
+		return nil, fmt.Errorf("failed to finalize idempotency key: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return booking, nil
 }
