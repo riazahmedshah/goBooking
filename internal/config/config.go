@@ -13,6 +13,7 @@ type Config struct {
 	Env      string         `validate:"required"`
 	Server   ServerConfig   `validate:"required"`
 	Database DatabaseConfig `validate:"required"`
+	Redis    RedisConfig    `validate:"required"`
 }
 
 type ServerConfig struct {
@@ -26,6 +27,11 @@ type DatabaseConfig struct {
 	Password string `validate:"required"`
 	Name     string `validate:"required"`
 	SSLMode  string `validate:"required"`
+}
+
+type RedisConfig struct {
+	Address  string `validate:"required"`
+	Password string `validate:"required"`
 }
 
 func getEnv(key, fallback string) string {
@@ -62,6 +68,10 @@ func LoadConfig() (*Config, error) {
 			Password: getEnv("DB_PASSWORD", ""),
 			Name:     getEnv("DB_NAME", ""),
 			SSLMode:  getEnv("DB_SSL_MODE", "disable"),
+		},
+		Redis: RedisConfig{
+			Address:  getEnv("REDIS_ADDRESS", "localhost:6379"),
+			Password: getEnv("REDIS_PASSWORD", ""),
 		},
 	}
 
