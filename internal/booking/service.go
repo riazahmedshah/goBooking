@@ -3,20 +3,25 @@ package booking
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
+	"github.com/hibiken/asynq"
 	"github.com/riazahmedshah/go-booking/internal/lib/utils"
+	"github.com/riazahmedshah/go-booking/internal/notification"
 	"github.com/riazahmedshah/go-booking/internal/server"
 )
 
 type BookingService struct {
 	server      *server.Server
 	bookingRepo *BookingRepository
+	asynqClient *asynq.Client
 }
 
-func NewBookingService(server *server.Server, bookingRepo *BookingRepository) *BookingService {
+func NewBookingService(server *server.Server, bookingRepo *BookingRepository, asynqClient *asynq.Client) *BookingService {
 	return &BookingService{
 		server:      server,
 		bookingRepo: bookingRepo,
+		asynqClient: asynqClient,
 	}
 }
 
@@ -75,6 +80,13 @@ func (b *BookingService) ConfirmBooking(ctx context.Context, key string, payload
 
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	if err := notification.EnqueueBookingCompletionTask(b.asynqClient, &notification.BookingCompletionTask{
+		BookingID:  booking.ID,
+		TotalPrice: booking.TotalPrice,
+	}); err != nil {
+		slog.Error("failed to enqueue booking completion email", "error", err)
 	}
 
 	return booking, nil

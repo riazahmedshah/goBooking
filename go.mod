@@ -11,6 +11,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/labstack/echo/v4 v4.15.4
 	github.com/redis/rueidis v1.0.76
+	github.com/resend/resend-go/v3 v3.9.2
 )
 
 require (

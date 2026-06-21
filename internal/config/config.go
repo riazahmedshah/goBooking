@@ -10,10 +10,11 @@ import (
 )
 
 type Config struct {
-	Env      string         `validate:"required"`
-	Server   ServerConfig   `validate:"required"`
-	Database DatabaseConfig `validate:"required"`
-	Redis    RedisConfig    `validate:"required"`
+	Env         string            `validate:"required"`
+	Server      ServerConfig      `validate:"required"`
+	Database    DatabaseConfig    `validate:"required"`
+	Redis       RedisConfig       `validate:"required"`
+	Integration IntegrationConfig `validate:"required"`
 }
 
 type ServerConfig struct {
@@ -33,6 +34,10 @@ type RedisConfig struct {
 	Address  string `validate:"required"`
 	Password string `validate:"required"`
 	LockTTL  string `validate:"required"`
+}
+
+type IntegrationConfig struct {
+	ResendAPIKey string `validate:"required"`
 }
 
 func getEnv(key, fallback string) string {
@@ -74,6 +79,9 @@ func LoadConfig() (*Config, error) {
 			Address:  getEnv("REDIS_ADDRESS", "localhost:6379"),
 			Password: getEnv("REDIS_PASSWORD", ""),
 			LockTTL:  getEnv("LOCK_TTL", "60000"),
+		},
+		Integration: IntegrationConfig{
+			ResendAPIKey: getEnv("INTEGRATION_RESEND_API_KEY", ""),
 		},
 	}
 

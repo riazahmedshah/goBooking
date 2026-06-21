@@ -5,14 +5,16 @@ import (
 
 	"github.com/hibiken/asynq"
 	"github.com/riazahmedshah/go-booking/internal/config"
+	"github.com/riazahmedshah/go-booking/internal/lib/email"
 )
 
 type NotificationService struct {
-	client *asynq.Client
-	server *asynq.Server
+	client      *asynq.Client
+	server      *asynq.Server
+	emailClient *email.Client
 }
 
-func NewNotificationServeice(cfg config.Config) *NotificationService {
+func NewNotificationService(cfg *config.Config) *NotificationService {
 	client := asynq.NewClient(asynq.RedisClientOpt{
 		Addr:     cfg.Redis.Address,
 		Password: cfg.Redis.Password,
@@ -25,8 +27,9 @@ func NewNotificationServeice(cfg config.Config) *NotificationService {
 		},
 	)
 	return &NotificationService{
-		client: client,
-		server: server,
+		client:      client,
+		server:      server,
+		emailClient: email.NewClient(cfg.Integration),
 	}
 }
 

@@ -75,6 +75,8 @@ github.com/redis/go-redis/v9 v9.20.1 h1:sfCU6A8P3dXbKyWes02uxA2baehGux9dZHfEKtsT
 github.com/redis/go-redis/v9 v9.20.1/go.mod h1:v/M13XI1PVCDcm01VtPFOADfZtHf8YW3baQf57KlIkA=
 github.com/redis/rueidis v1.0.76 h1:RdDWuvlYBSp+bTrBvaXqJnNEL3VVzsnjo+0psPFgLc4=
 github.com/redis/rueidis v1.0.76/go.mod h1:UsfHPSbomB6QAVMk4iiFkzRy0nh9o7scDGa+SitvBY4=
+github.com/resend/resend-go/v3 v3.9.2 h1:Ipjmm+NR/UWfO1PYKLcbFBiEAPtP0gyQxUQP/rcAdo8=
+github.com/resend/resend-go/v3 v3.9.2/go.mod h1:iI7VA0NoGjWvsNii5iNC5Dy0llsI3HncXPejhniYzwE=
 github.com/robfig/cron/v3 v3.0.1 h1:WdRxkvbJztn8LMz/QEvLN5sBU+xKpSqwwUO1Pjr4qDs=
 github.com/robfig/cron/v3 v3.0.1/go.mod h1:eQICP3HwyT7UooqI/z+Ov+PtYAWygg1TEWWzGIFLtro=
 github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0tI/otEQ=
