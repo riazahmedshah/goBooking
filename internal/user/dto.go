@@ -6,8 +6,8 @@ type CreateUserPayload struct {
 	FirstName string  `json:"firstName" validate:"required,max=255"`
 	LastName  *string `json:"lastName" validate:"omitempty,max=255"`
 	Email     string  `json:"email" validate:"required,email"`
-	Password  string  `json:"password" validate:"required"`
-	Role      string  `json:"role" validate:"required,oneof=role host"`
+	Password  string  `json:"password" validate:"required,min=6,max=20"`
+	Role      *string `json:"role" validate:"omitempty,oneof=user host"`
 }
 
 func (payload *CreateUserPayload) Validate() error {
