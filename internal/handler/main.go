@@ -7,12 +7,12 @@ import (
 )
 
 type Handler struct {
-	userHandler *user.UserHandler
+	UserHandler *user.UserHandler
 }
 
 func NewHandler(server *server.Server, service *service.Service) *Handler {
 	userHandler := user.NewUserHandler(server, service.UserService)
 	return &Handler{
-		userHandler: userHandler,
+		UserHandler: userHandler,
 	}
 }
