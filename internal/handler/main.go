@@ -1,18 +1,18 @@
 package handler
 
 import (
-	"github.com/riazahmedshah/go-booking/internal/property"
 	"github.com/riazahmedshah/go-booking/internal/server"
 	"github.com/riazahmedshah/go-booking/internal/service"
+	"github.com/riazahmedshah/go-booking/internal/user"
 )
 
 type Handler struct {
-	PropertyHandler *property.PropertyHandler
+	userHandler *user.UserHandler
 }
 
-func NewHandler(server *server.Server, s *service.Service) *Handler {
-	propertyHandler := property.NewPropertyHandler(server, s.PropertyService)
+func NewHandler(server *server.Server, service *service.Service) *Handler {
+	userHandler := user.NewUserHandler(server, service.UserService)
 	return &Handler{
-		PropertyHandler: propertyHandler,
+		userHandler: userHandler,
 	}
 }

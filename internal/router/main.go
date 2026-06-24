@@ -1,14 +1,18 @@
 package router
 
 import (
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	"github.com/riazahmedshah/go-booking/internal/handler"
 	v1 "github.com/riazahmedshah/go-booking/internal/router/v1"
 	"github.com/riazahmedshah/go-booking/internal/server"
+	"github.com/riazahmedshah/go-booking/internal/validation"
 )
 
 func NewRouter(s *server.Server, h *handler.Handler) *echo.Echo {
 	router := echo.New()
+
+	router.Validator = &validation.CustomValidator{Validator: validator.New()}
 
 	// Register your routes here
 	v1Group := router.Group("/api/v1")

@@ -23,12 +23,11 @@ func Migrate(ctx context.Context, cfg *config.Config) error {
 
 	// URL-encode the password
 	encodedPassword := url.QueryEscape(cfg.Database.Password)
-	dsn := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=%s",
+	dsn := fmt.Sprintf("postgres://%s:%s@%s/%s",
 		cfg.Database.User,
 		encodedPassword,
 		hostPort,
 		cfg.Database.Name,
-		cfg.Database.SSLMode,
 	)
 
 	conn, err := pgx.Connect(ctx, dsn)

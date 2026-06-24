@@ -1,18 +1,18 @@
 package service
 
 import (
-	"github.com/riazahmedshah/go-booking/internal/property"
 	"github.com/riazahmedshah/go-booking/internal/repository"
 	"github.com/riazahmedshah/go-booking/internal/server"
+	"github.com/riazahmedshah/go-booking/internal/user"
 )
 
 type Service struct {
-	PropertyService *property.PropertyService
+	UserService *user.UserService
 }
 
 func NewService(server *server.Server, repository *repository.Repositories) (*Service, error) {
-	propertyService := property.NewPropertyService(server, repository.PropertyRepo)
+	userService := user.NewUserService(server, repository.UserRepository)
 	return &Service{
-		PropertyService: propertyService,
+		UserService: userService,
 	}, nil
 }

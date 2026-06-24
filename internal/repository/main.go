@@ -1,17 +1,17 @@
 package repository
 
 import (
-	"github.com/riazahmedshah/go-booking/internal/property"
 	"github.com/riazahmedshah/go-booking/internal/server"
+	"github.com/riazahmedshah/go-booking/internal/user"
 )
 
 type Repositories struct {
-	PropertyRepo *property.PropertyRepository
+	UserRepository *user.UserRepository
 }
 
 func NewRepositories(s *server.Server) *Repositories {
-	propertyRepo := property.NewPropertyRepository(s)
+	userRepo := user.NewUserRepository(s)
 	return &Repositories{
-		PropertyRepo: propertyRepo,
+		UserRepository: userRepo,
 	}
 }

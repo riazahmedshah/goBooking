@@ -20,12 +20,11 @@ func New(cfg *config.Config) (*pgxpool.Pool, error) {
 
 	encodedPassword := url.QueryEscape(cfg.Database.Password)
 
-	dns := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode%s",
+	dns := fmt.Sprintf("postgres://%s:%s@%s/%s",
 		cfg.Database.User,
 		encodedPassword,
 		hostport,
 		cfg.Database.Name,
-		cfg.Database.SSLMode,
 	)
 
 	pgxPoolConfig, err := pgxpool.ParseConfig(dns)

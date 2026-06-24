@@ -28,13 +28,28 @@ func New(cfg *config.Config) (*Server, error) {
 		return nil, fmt.Errorf("failed to initialize database: %w", err)
 	}
 
-	// redisClient, err := rueidis.NewClient(rueidis.ClientOption{
-	// 	InitAddress: []string{cfg.Redis.Address},
-	// })
+	redisClient, err := rueidis.NewClient(rueidis.ClientOption{
+		InitAddress: []string{cfg.Redis.Address},
+		Password:    cfg.Redis.Password,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize Redis client: %w", err)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// 3. Build AND Execute the ping command
+	pingCmd := redisClient.B().Ping().Build()
+	err = redisClient.Do(ctx, pingCmd).Error()
+	if err != nil {
+		return nil, fmt.Errorf("redis ping failed: %w", err)
+	}
 
 	locker, err := rueidislock.NewLocker(rueidislock.LockerOption{
 		ClientOption: rueidis.ClientOption{
 			InitAddress: []string{cfg.Redis.Address},
+			Password:    cfg.Redis.Password,
 		},
 		KeyMajority:    1,
 		NoLoopTracking: true,

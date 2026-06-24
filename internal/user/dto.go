@@ -3,11 +3,11 @@ package user
 import "github.com/go-playground/validator/v10"
 
 type CreateUserPayload struct {
-	FirstName string  `json:"firstName" validate:"required max=255"`
-	LastName  *string `json:"lastName" validate:"omitempty max=255"`
+	FirstName string  `json:"firstName" validate:"required,max=255"`
+	LastName  *string `json:"lastName" validate:"omitempty,max=255"`
 	Email     string  `json:"email" validate:"required,email"`
 	Password  string  `json:"password" validate:"required"`
-	Role      string  `json:"role" validate:"required oneof=role host"`
+	Role      string  `json:"role" validate:"required,oneof=role host"`
 }
 
 func (payload *CreateUserPayload) Validate() error {
