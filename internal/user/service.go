@@ -29,11 +29,10 @@ func NewUserService(server *server.Server, ur *UserRepository) *UserService {
 
 func (us *UserService) CreateUser(ctx context.Context, payload *CreateUserPayload) error {
 	user, err := us.userRepo.GetUserByEmail(ctx, payload.Email)
-	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		slog.Error("database failure during email check", "error", err)
-		return ErrInternal
-	}
-
+	// if err == nil && errors.Is(err, pgx.ErrNoRows) {
+	// 	slog.Error("database failure during email check", "error", err)
+	// 	return ErrInternal
+	// }
 	if err == nil && user != nil {
 		return ErrEmailAlreadyExists
 	}
@@ -45,4 +44,22 @@ func (us *UserService) CreateUser(ctx context.Context, payload *CreateUserPayloa
 
 	payload.Password = string(hash)
 	return us.userRepo.CreateUser(ctx, payload)
+}
+
+func (us *UserService) Login(ctx context.Context, payload *LoginPayload) (*User, error) {
+	exixtingUser, err := us.userRepo.GetUserByEmail(ctx, payload.Email)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errors.New("invalid email or password")
+		}
+		slog.Error("database failure during login", "error", err)
+		return nil, ErrInternal
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(exixtingUser.Password), []byte(payload.Password))
+	if err != nil {
+		return nil, errors.New("invalid email or password")
+	}
+
+	return exixtingUser, nil
 }

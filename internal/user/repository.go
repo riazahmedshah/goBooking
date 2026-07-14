@@ -80,6 +80,7 @@ func (ur *UserRepository) GetUserByEmail(ctx context.Context, email string) (*Us
 	stmt := `
 		SELECT
 			id, first_name, last_name, email, password, role
+		FROM users
 		WHERE 
 			email=@email
 	`
@@ -89,7 +90,7 @@ func (ur *UserRepository) GetUserByEmail(ctx context.Context, email string) (*Us
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, fmt.Errorf("user not found with email=%s: %w", email, err)
 		}
-		return nil, fmt.Errorf("failed o collect row from table:users for user with email=%s: %w", email, err)
+		return nil, fmt.Errorf("failed to collect row from table:users for user with email=%s: %w", email, err)
 	}
 
 	return user, nil

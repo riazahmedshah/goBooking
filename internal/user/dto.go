@@ -10,6 +10,11 @@ type CreateUserPayload struct {
 	Role      *string `json:"role" validate:"omitempty,oneof=user host"`
 }
 
+type LoginPayload struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=6,max=20"`
+}
+
 func (payload *CreateUserPayload) Validate() error {
 	validate := validator.New()
 	return validate.Struct(payload)
@@ -20,4 +25,12 @@ type CreateHostPayload struct {
 	StateName string `json:"stateName" validate:"required,min=3,max=50"`
 	City      string `json:"city" validate:"required,min=1,max=100"`
 	Area      string `json:"area" validate:"required,min=1,max=500"`
+}
+
+type ResponseUserDTO struct {
+	ID        string  `json:"id"`
+	FirstName string  `json:"firstName"`
+	LastName  *string `json:"lastName"`
+	Email     string  `json:"email"`
+	Role      string  `json:"role"`
 }
