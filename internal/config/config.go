@@ -15,6 +15,7 @@ type Config struct {
 	Database    DatabaseConfig    `validate:"required"`
 	Redis       RedisConfig       `validate:"required"`
 	Integration IntegrationConfig `validate:"required"`
+	JWT         JWTConfig         `validate:"required"`
 }
 
 type ServerConfig struct {
@@ -37,6 +38,10 @@ type RedisConfig struct {
 
 type IntegrationConfig struct {
 	ResendAPIKey string `validate:"omitempty"`
+}
+
+type JWTConfig struct {
+	SecretKey string `validate:"required"`
 }
 
 func getEnv(key, fallback string) string {
@@ -80,6 +85,9 @@ func LoadConfig() (*Config, error) {
 		},
 		Integration: IntegrationConfig{
 			ResendAPIKey: getEnv("INTEGRATION_RESEND_API_KEY", ""),
+		},
+		JWT: JWTConfig{
+			SecretKey: getEnv("JWT_SECRET_KEY", ""),
 		},
 	}
 

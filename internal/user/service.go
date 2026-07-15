@@ -6,6 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/riazahmedshah/go-booking/internal/lib/utils"
 	"github.com/riazahmedshah/go-booking/internal/server"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -46,20 +47,26 @@ func (us *UserService) CreateUser(ctx context.Context, payload *CreateUserPayloa
 	return us.userRepo.CreateUser(ctx, payload)
 }
 
-func (us *UserService) Login(ctx context.Context, payload *LoginPayload) (*User, error) {
+func (us *UserService) Login(ctx context.Context, payload *LoginPayload) (string, error) {
 	exixtingUser, err := us.userRepo.GetUserByEmail(ctx, payload.Email)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, errors.New("invalid email or password")
+			return "", errors.New("invalid email or password")
 		}
 		slog.Error("database failure during login", "error", err)
-		return nil, ErrInternal
+		return "", ErrInternal
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(exixtingUser.Password), []byte(payload.Password))
 	if err != nil {
-		return nil, errors.New("invalid email or password")
+		return "", errors.New("invalid email/password")
 	}
 
-	return exixtingUser, nil
+	token, err := utils.GenerateJWTToken(exixtingUser.ID, exixtingUser.Role, []byte(us.server.Config.JWT.SecretKey))
+	if err != nil {
+		slog.Error("failed to generate JWT token", "error", err)
+		return "", ErrInternal
+	}
+
+	return token, nil
 }
