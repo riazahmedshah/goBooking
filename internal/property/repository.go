@@ -21,20 +21,10 @@ func NewPropertyRepository(server *server.Server) *PropertyRepository {
 func (p *PropertyRepository) Createproperty(ctx context.Context, hostID int, payload *CreatePropertyPayload) (*Property, error) {
 	stmt := `
 		INSERT INTO properties(
-			host_id,
-			title,
-			sub_title,
-			image,
-			address_id,
-			max_guests
+			host_id, title, sub_title, image, address_id, max_guests
 		)
 		VALUES (
-			@host_id,
-			@title,
-			@sub_title,
-			@image,
-			@address_id,
-			@max_guests
+			@host_id, @title, @sub_title, @image, @address_id, @max_guests
 		)
 		RETURNING *
 	`
@@ -63,14 +53,7 @@ func (p *PropertyRepository) Createproperty(ctx context.Context, hostID int, pay
 func (p *PropertyRepository) GetPropertyByID(ctx context.Context, propertyID int) (*Property, error) {
 	stmt := `
 		SELECT
-			id,
-			title,
-			subtitle,
-			image,
-			address_id,
-			host_id,
-			created-at,
-			updated_at
+			id, title, subtitle, image, address_id, host_id, created-at, updated_at
 		FROM
 			properties
 		WHERE
