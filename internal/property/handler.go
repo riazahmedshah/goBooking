@@ -1,6 +1,9 @@
 package property
 
 import (
+	"log/slog"
+	"net/http"
+
 	"github.com/labstack/echo/v4"
 	"github.com/riazahmedshah/go-booking/internal/server"
 )
@@ -21,12 +24,13 @@ func (p *PropertyHandler) CreateProperty(c echo.Context) error {
 	var payload CreatePropertyPayload
 
 	if err := c.Bind(&payload); err != nil {
-		return err
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request payload")
 	}
 
 	property, err := p.propertyService.CreateProperty(c.Request().Context(), 123, &payload)
 	if err != nil {
-		return c.JSON(500, map[string]string{"error": "internal server error"})
+		slog.Error("failed to create property", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
 	}
 	return c.JSON(201, property)
 }

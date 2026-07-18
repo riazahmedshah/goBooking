@@ -2,6 +2,7 @@ package property
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/riazahmedshah/go-booking/internal/server"
 )
@@ -21,6 +22,7 @@ func NewPropertyService(server *server.Server, propertyRepo *PropertyRepository)
 func (p *PropertyService) CreateProperty(ctx context.Context, hostID int, payload *CreatePropertyPayload) (*Property, error) {
 	property, err := p.propertyRepo.Createproperty(ctx, hostID, payload)
 	if err != nil {
+		slog.Error("database failure during property creation", "error", err)
 		return nil, err
 	}
 

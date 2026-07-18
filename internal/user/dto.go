@@ -20,13 +20,6 @@ func (payload *CreateUserPayload) Validate() error {
 	return validate.Struct(payload)
 }
 
-type CreateHostPayload struct {
-	UserID    string `json:"userId" validate:"required,uuid"`
-	StateName string `json:"stateName" validate:"required,min=3,max=50"`
-	City      string `json:"city" validate:"required,min=1,max=100"`
-	Area      string `json:"area" validate:"required,min=1,max=500"`
-}
-
 type ResponseUserDTO struct {
 	ID        string  `json:"id"`
 	FirstName string  `json:"firstName"`
