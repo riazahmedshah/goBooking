@@ -27,7 +27,7 @@ func (p *PropertyHandler) CreateProperty(c echo.Context) error {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid request payload")
 	}
 
-	property, err := p.propertyService.CreateProperty(c.Request().Context(), 123, &payload)
+	property, err := p.propertyService.CreateProperty(c.Request().Context(), "123", &payload)
 	if err != nil {
 		slog.Error("failed to create property", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")

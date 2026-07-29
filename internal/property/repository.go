@@ -18,7 +18,7 @@ func NewPropertyRepository(server *server.Server) *PropertyRepository {
 	return &PropertyRepository{server: server}
 }
 
-func (p *PropertyRepository) Createproperty(ctx context.Context, hostID int, payload *CreatePropertyPayload) (*Property, error) {
+func (p *PropertyRepository) Createproperty(ctx context.Context, hostID string, payload *CreatePropertyPayload) (*Property, error) {
 	stmt := `
 		INSERT INTO properties(
 			host_id, title, sub_title, image, address_id, max_guests
@@ -33,24 +33,23 @@ func (p *PropertyRepository) Createproperty(ctx context.Context, hostID int, pay
 		"host_id":    hostID,
 		"title":      payload.Title,
 		"sub_title":  payload.SubTitle,
-		"image":      payload.Image,
-		"address_id": payload.AddressID,
 		"max_guests": payload.MaxGuests,
+		"price":      payload.Price,
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute create todo query for host_id=%d title=%s: %w", hostID, payload.Title, err)
+		return nil, fmt.Errorf("failed to execute create todo query for host_id=%s title=%s: %w", hostID, payload.Title, err)
 	}
 
 	propertyItem, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Property])
 	if err != nil {
-		return nil, fmt.Errorf("failed to collect row from table:todos for host_id=%v title=%s: %w", hostID, payload.Title, err)
+		return nil, fmt.Errorf("failed to collect row from table:todos for host_id=%s title=%s: %w", hostID, payload.Title, err)
 	}
 
 	return &propertyItem, nil
 }
 
-func (p *PropertyRepository) GetPropertyByID(ctx context.Context, propertyID int) (*Property, error) {
+func (p *PropertyRepository) GetPropertyByID(ctx context.Context, propertyID string) (*Property, error) {
 	stmt := `
 		SELECT
 			id, title, subtitle, image, address_id, host_id, created-at, updated_at
@@ -71,14 +70,14 @@ func (p *PropertyRepository) GetPropertyByID(ctx context.Context, propertyID int
 	propertyItem, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Property])
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to collect row from table:properties for property_id=%d: %w", propertyID, err)
+		return nil, fmt.Errorf("failed to collect row from table:properties for property_id=%s: %w", propertyID, err)
 	}
 
 	return &propertyItem, nil
 
 }
 
-func (p *PropertyRepository) UpdateProperty(ctx context.Context, propertyID int, payload *UpdatePropertyPayload) (*Property, error) {
+func (p *PropertyRepository) UpdateProperty(ctx context.Context, propertyID string, payload *UpdatePropertyPayload) (*Property, error) {
 	stmt := "UPDATE properties SET "
 
 	args := pgx.NamedArgs{
@@ -123,14 +122,14 @@ func (p *PropertyRepository) UpdateProperty(ctx context.Context, propertyID int,
 	updatedProperty, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Property])
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to collect row from table:properties for property_id=%d: %w", propertyID, err)
+		return nil, fmt.Errorf("failed to collect row from table:properties for property_id=%s: %w", propertyID, err)
 	}
 
 	return &updatedProperty, nil
 
 }
 
-func (p *PropertyRepository) DeleteProperty(ctx context.Context, propertyID int) error {
+func (p *PropertyRepository) DeleteProperty(ctx context.Context, propertyID string) error {
 	stmt := `
 		DELETE FROM properties
 		WHERE id = @id

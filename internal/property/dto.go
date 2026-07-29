@@ -5,8 +5,7 @@ import "github.com/go-playground/validator/v10"
 type CreatePropertyPayload struct {
 	Title     string  `json:"title" validate:"required,min=1,max=255"`
 	SubTitle  *string `json:"subTitle" validate:"omitempty,max=1000"`
-	Image     *string `json:"image" validate:"omitempty"`
-	AddressID int     `json:"addressId" validate:"required"`
+	Price		 *float64 `json:"price" validate:"required,min=0"`
 	MaxGuests *int    `json:"maxGuest" validate:"omitempty,min=1"`
 }
 
