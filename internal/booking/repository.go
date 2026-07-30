@@ -24,13 +24,17 @@ func (r *BookingRepository) CreateBooking(ctx context.Context, payload *CreateBo
 			user_id, 
 			property_id, 
 			total_price, 
-			status
+			status,
+			check_in,
+			check_out
 		)
 		VALUES (
 			@user_id, 
 			@property_id, 
 			@total_price, 
-			@status
+			@status,
+			@check_in,
+			@check_out
 		)
 		RETURNING *
 	`
@@ -40,6 +44,8 @@ func (r *BookingRepository) CreateBooking(ctx context.Context, payload *CreateBo
 		"property_id": payload.PropertyID,
 		"total_price": payload.TotalPrice,
 		"status":      payload.Status,
+		"check_in":    payload.CheckIn,
+		"check_out":   payload.CheckOut,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute create booking query for user_id=%v property_id=%v: %w", payload.UserID, *payload.PropertyID, err)
@@ -57,12 +63,12 @@ func (r *BookingRepository) CreateBooking(ctx context.Context, payload *CreateBo
 func (r *BookingRepository) CreateIdempotencyKey(ctx context.Context, idemKey string, bookingId int) (*IdempotencyKey, error) {
 	stmt := `
 		INSERT INTO idempotency_keys (
-			idem_key, 
+			key, 
 			booking_id, 
 			is_finalized
 		)
 		VALUES (
-			@idem_key, 
+			@key, 
 			@booking_id, 
 			false
 		)
@@ -70,7 +76,7 @@ func (r *BookingRepository) CreateIdempotencyKey(ctx context.Context, idemKey st
 	`
 
 	rows, err := r.server.DB.Query(ctx, stmt, pgx.NamedArgs{
-		"idem_key":   idemKey,
+		"key":        idemKey,
 		"booking_id": bookingId,
 	})
 	if err != nil {
@@ -128,13 +134,13 @@ func (r *BookingRepository) GetIdempotencyKeyWithLock(ctx context.Context, tx pg
 	stmt := `
 		SELECT 
 			id, 
-			idem_key, 
+			key, 
 			booking_id, 
 			is_finalized
 		FROM 
 			idempotency_keys
 		WHERE 
-			idem_key = @key
+			key = @key
 		FOR UPDATE
 	`
 	rows, err := tx.Query(ctx, stmt, pgx.NamedArgs{

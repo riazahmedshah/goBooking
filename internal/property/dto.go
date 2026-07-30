@@ -3,10 +3,10 @@ package property
 import "github.com/go-playground/validator/v10"
 
 type CreatePropertyPayload struct {
-	Title     string  `json:"title" validate:"required,min=1,max=255"`
-	SubTitle  *string `json:"subTitle" validate:"omitempty,max=1000"`
-	Price		 *float64 `json:"price" validate:"required,min=0"`
-	MaxGuests *int    `json:"maxGuest" validate:"omitempty,min=1"`
+	Title     string   `json:"title" validate:"required,min=1,max=255"`
+	SubTitle  *string  `json:"subTitle" validate:"omitempty,max=1000"`
+	Price     *float64 `json:"price" validate:"required,min=0"`
+	MaxGuests *int     `json:"maxGuests" validate:"omitempty,min=1"`
 }
 
 func (p *CreatePropertyPayload) Validate() error {
@@ -14,11 +14,12 @@ func (p *CreatePropertyPayload) Validate() error {
 	return validate.Struct(p)
 }
 
+// Bug: Review properly.
 type UpdatePropertyPayload struct {
 	SubTitle  *string `json:"subTitle" validate:"omitempty,max=1000"`
 	Image     *string `json:"image" validate:"omitempty"`
 	AddressID *int    `json:"addressId" validate:"omitempty"`
-	MaxGuests *int    `json:"maxGuest" validate:"omitempty,min=1"`
+	MaxGuests *int    `json:"maxGuests" validate:"omitempty,min=1"`
 }
 
 func (p *UpdatePropertyPayload) Validate() error {

@@ -16,7 +16,7 @@ type Booking struct {
 
 type IdempotencyKey struct {
 	ID          int    `json:"id" db:"id"`
-	IdemKey     string `json:"idemKey" db:"idem_key"`
+	Key         string `json:"key" db:"key"`
 	BookingID   int    `json:"bookingId" db:"booking_id"`
 	IsFinalized bool   `json:"isFinalized" db:"is_finalized"`
 }

@@ -1,12 +1,18 @@
 package booking
 
-import "github.com/go-playground/validator/v10"
+import (
+	"time"
+
+	"github.com/go-playground/validator/v10"
+)
 
 type CreateBookingPayload struct {
-	UserID     *int     `json:"userId" validate:"required"`
-	PropertyID *int     `json:"propertyId" validate:"required"`
-	TotalPrice *float64 `json:"totalPrice" validate:"required,gt=0"`
-	Status     *string  `json:"status" validate:"required,oneof=pending confirmed cancelled"`
+	UserID     *int       `json:"userId" validate:"required"`
+	PropertyID *int       `json:"propertyId" validate:"required"`
+	TotalPrice *float64   `json:"totalPrice" validate:"required,gt=0"`
+	Status     *string    `json:"status" validate:"required,oneof=pending confirmed cancelled"`
+	CheckIn    *time.Time `json:"checkIn" validate:"required,datetime"`
+	CheckOut   *time.Time `json:"checkOut" validate:"required,datetime,gtfield=CheckIn"`
 }
 
 func (p *CreateBookingPayload) Validate() error {

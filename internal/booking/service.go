@@ -17,11 +17,10 @@ type BookingService struct {
 	asynqClient *asynq.Client
 }
 
-func NewBookingService(server *server.Server, bookingRepo *BookingRepository, asynqClient *asynq.Client) *BookingService {
+func NewBookingService(server *server.Server, bookingRepo *BookingRepository) *BookingService {
 	return &BookingService{
 		server:      server,
 		bookingRepo: bookingRepo,
-		asynqClient: asynqClient,
 	}
 }
 
@@ -49,7 +48,7 @@ func (b *BookingService) CreateBooking(ctx context.Context, userID int, payload 
 		return nil, fmt.Errorf("failed to create idempotency key: %w", err)
 	}
 
-	return idempotencyData.IdemKey, nil
+	return idempotencyData.Key, nil
 
 }
 
