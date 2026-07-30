@@ -21,13 +21,14 @@ func NewPropertyHandler(server *server.Server, propertyService *PropertyService)
 }
 
 func (p *PropertyHandler) CreateProperty(c echo.Context) error {
+	userID, _ := c.Get("userID").(string)
 	var payload CreatePropertyPayload
 
 	if err := c.Bind(&payload); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid request payload")
 	}
 
-	property, err := p.propertyService.CreateProperty(c.Request().Context(), "123", &payload)
+	property, err := p.propertyService.CreateProperty(c.Request().Context(), userID, &payload)
 	if err != nil {
 		slog.Error("failed to create property", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
