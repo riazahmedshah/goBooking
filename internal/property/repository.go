@@ -21,10 +21,10 @@ func NewPropertyRepository(server *server.Server) *PropertyRepository {
 func (p *PropertyRepository) Createproperty(ctx context.Context, hostID string, payload *CreatePropertyPayload) (*Property, error) {
 	stmt := `
 		INSERT INTO properties(
-			host_id, title, sub_title, image, address_id, max_guests
+			host_id, title, sub_title, max_guests, price
 		)
 		VALUES (
-			@host_id, @title, @sub_title, @image, @address_id, @max_guests
+			@host_id, @title, @sub_title, @max_guests, @price
 		)
 		RETURNING *
 	`
@@ -38,12 +38,12 @@ func (p *PropertyRepository) Createproperty(ctx context.Context, hostID string, 
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute create todo query for host_id=%s title=%s: %w", hostID, payload.Title, err)
+		return nil, fmt.Errorf("failed to execute create property query for host_id=%s title=%s: %w", hostID, payload.Title, err)
 	}
 
 	propertyItem, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Property])
 	if err != nil {
-		return nil, fmt.Errorf("failed to collect row from table:todos for host_id=%s title=%s: %w", hostID, payload.Title, err)
+		return nil, fmt.Errorf("failed to collect row from table:properties for host_id=%s title=%s: %w", hostID, payload.Title, err)
 	}
 
 	return &propertyItem, nil
