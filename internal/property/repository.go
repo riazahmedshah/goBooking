@@ -18,7 +18,7 @@ func NewPropertyRepository(server *server.Server) *PropertyRepository {
 	return &PropertyRepository{server: server}
 }
 
-func (p *PropertyRepository) Createproperty(ctx context.Context, hostID string, payload *CreatePropertyPayload) (*Property, error) {
+func (pr *PropertyRepository) Createproperty(ctx context.Context, hostID string, payload *CreatePropertyPayload) (*Property, error) {
 	stmt := `
 		INSERT INTO properties(
 			host_id, title, sub_title, max_guests, price
@@ -29,7 +29,7 @@ func (p *PropertyRepository) Createproperty(ctx context.Context, hostID string, 
 		RETURNING *
 	`
 
-	rows, err := p.server.DB.Query(ctx, stmt, pgx.NamedArgs{
+	rows, err := pr.server.DB.Query(ctx, stmt, pgx.NamedArgs{
 		"host_id":    hostID,
 		"title":      payload.Title,
 		"sub_title":  payload.SubTitle,
@@ -49,17 +49,38 @@ func (p *PropertyRepository) Createproperty(ctx context.Context, hostID string, 
 	return &propertyItem, nil
 }
 
-func (p *PropertyRepository) GetPropertyByID(ctx context.Context, propertyID string) (*Property, error) {
+func (pr *PropertyRepository) GetAllProperties(ctx context.Context) ([]*Property, error) {
 	stmt := `
 		SELECT
-			id, title, subtitle, image, address_id, host_id, created-at, updated_at
+			id, title, sub_title, price, host_id, max_guests, created_at, updated_at
+		FROM
+			properties
+	`
+	rows, err := pr.server.DB.Query(ctx, stmt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute get all properties query: %w", err)
+	}
+	defer rows.Close()
+
+	properties, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByName[Property])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect rows from table:properties: %w", err)
+	}
+
+	return properties, nil
+}
+
+func (pr *PropertyRepository) GetPropertyByID(ctx context.Context, propertyID string) (*Property, error) {
+	stmt := `
+		SELECT
+			id, title, sub_title, price, host_id, max_guests, created_at, updated_at
 		FROM
 			properties
 		WHERE
 			id = @id
 		`
 
-	rows, err := p.server.DB.Query(ctx, stmt, pgx.NamedArgs{
+	rows, err := pr.server.DB.Query(ctx, stmt, pgx.NamedArgs{
 		"id": propertyID,
 	})
 
@@ -77,7 +98,7 @@ func (p *PropertyRepository) GetPropertyByID(ctx context.Context, propertyID str
 
 }
 
-func (p *PropertyRepository) UpdateProperty(ctx context.Context, propertyID string, payload *UpdatePropertyPayload) (*Property, error) {
+func (pr *PropertyRepository) UpdateProperty(ctx context.Context, propertyID string, payload *UpdatePropertyPayload) (*Property, error) {
 	stmt := "UPDATE properties SET "
 
 	args := pgx.NamedArgs{
@@ -113,7 +134,7 @@ func (p *PropertyRepository) UpdateProperty(ctx context.Context, propertyID stri
 	stmt += strings.Join(setClauses, ", ")
 	stmt += " WHERE id = @id RETURNING *"
 
-	rows, err := p.server.DB.Query(ctx, stmt, args)
+	rows, err := pr.server.DB.Query(ctx, stmt, args)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
@@ -129,13 +150,13 @@ func (p *PropertyRepository) UpdateProperty(ctx context.Context, propertyID stri
 
 }
 
-func (p *PropertyRepository) DeleteProperty(ctx context.Context, propertyID string) error {
+func (pr *PropertyRepository) DeleteProperty(ctx context.Context, propertyID string) error {
 	stmt := `
 		DELETE FROM properties
 		WHERE id = @id
 	`
 
-	result, err := p.server.DB.Exec(ctx, stmt, pgx.NamedArgs{
+	result, err := pr.server.DB.Exec(ctx, stmt, pgx.NamedArgs{
 		"id": propertyID,
 	})
 
