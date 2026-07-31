@@ -25,6 +25,7 @@ func (bh *BookingHandler) CreateBooking(c echo.Context) error {
 	var payload CreateBookingPayload
 
 	if err := c.Bind(&payload); err != nil {
+		slog.Error("failed to bind request payload", "error", err)
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid request payload")
 	}
 

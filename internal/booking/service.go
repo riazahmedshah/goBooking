@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/hibiken/asynq"
 	"github.com/riazahmedshah/go-booking/internal/lib/utils"
@@ -26,12 +27,17 @@ func NewBookingService(server *server.Server, bookingRepo *BookingRepository) *B
 
 func (b *BookingService) CreateBooking(ctx context.Context, userID string, payload *CreateBookingPayload) (any, error) {
 
-	lockKey := fmt.Sprintf("booking:%d", payload.PropertyID)
-	lockCtx, cancel, err := b.server.Locker.WithContext(ctx, lockKey)
+	lockKey := fmt.Sprintf("booking:%s", *payload.PropertyID)
+	// lockTimeoutCtx, cancelTimeout := context.WithTimeout(ctx, 500*time.Millisecond)
+	// defer cancelTimeout()
+	detachedCtx := context.WithoutCancel(ctx)
+
+	tryLockCtx, cancelTryLock := context.WithTimeout(detachedCtx, 5*time.Millisecond)
+	defer cancelTryLock()
+	lockCtx, _, err := b.server.Locker.WithContext(tryLockCtx, lockKey)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("property is currently being booked by another request, please try again: %w", err)
 	}
-	defer cancel()
 
 	booking, err := b.bookingRepo.CreateBooking(lockCtx, userID, payload)
 	if err != nil {

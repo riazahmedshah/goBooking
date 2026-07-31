@@ -1,6 +1,6 @@
 package email
 
-func (c *Client) SendConfirmationEmail(to string, bookingID int, totalPrice float64) error {
+func (c *Client) SendConfirmationEmail(to string, bookingID string, totalPrice float64) error {
 
 	data := map[string]any{
 		"BookingID": bookingID,

@@ -24,7 +24,6 @@ func (r *BookingRepository) CreateBooking(ctx context.Context, userID string, pa
 			user_id, 
 			property_id, 
 			total_price, 
-			status,
 			check_in,
 			check_out
 		)
@@ -32,7 +31,6 @@ func (r *BookingRepository) CreateBooking(ctx context.Context, userID string, pa
 			@user_id, 
 			@property_id, 
 			@total_price, 
-			@status,
 			@check_in,
 			@check_out
 		)
@@ -43,7 +41,6 @@ func (r *BookingRepository) CreateBooking(ctx context.Context, userID string, pa
 		"user_id":     userID,
 		"property_id": payload.PropertyID,
 		"total_price": payload.TotalPrice,
-		"status":      payload.Status,
 		"check_in":    payload.CheckIn,
 		"check_out":   payload.CheckOut,
 	})
@@ -60,17 +57,15 @@ func (r *BookingRepository) CreateBooking(ctx context.Context, userID string, pa
 	return &bookingItem, nil
 }
 
-func (r *BookingRepository) CreateIdempotencyKey(ctx context.Context, idemKey string, bookingId int) (*IdempotencyKey, error) {
+func (r *BookingRepository) CreateIdempotencyKey(ctx context.Context, idemKey string, bookingId string) (*IdempotencyKey, error) {
 	stmt := `
 		INSERT INTO idempotency_keys (
 			key, 
-			booking_id, 
-			is_finalized
+			booking_id
 		)
 		VALUES (
 			@key, 
-			@booking_id, 
-			false
+			@booking_id
 		)
 		RETURNING *
 	`
