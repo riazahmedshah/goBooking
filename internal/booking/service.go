@@ -24,7 +24,7 @@ func NewBookingService(server *server.Server, bookingRepo *BookingRepository) *B
 	}
 }
 
-func (b *BookingService) CreateBooking(ctx context.Context, userID int, payload *CreateBookingPayload) (any, error) {
+func (b *BookingService) CreateBooking(ctx context.Context, userID string, payload *CreateBookingPayload) (any, error) {
 
 	lockKey := fmt.Sprintf("booking:%d", payload.PropertyID)
 	lockCtx, cancel, err := b.server.Locker.WithContext(ctx, lockKey)
@@ -33,7 +33,7 @@ func (b *BookingService) CreateBooking(ctx context.Context, userID int, payload 
 	}
 	defer cancel()
 
-	booking, err := b.bookingRepo.CreateBooking(lockCtx, payload)
+	booking, err := b.bookingRepo.CreateBooking(lockCtx, userID, payload)
 	if err != nil {
 		return nil, err
 	}

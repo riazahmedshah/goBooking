@@ -21,7 +21,7 @@ func NewBookingHandler(server *server.Server, bookingService *BookingService) *B
 }
 
 func (bh *BookingHandler) CreateBooking(c echo.Context) error {
-	userID, _ := c.Get("userID").(int)
+	userID, _ := c.Get("userID").(string)
 	var payload CreateBookingPayload
 
 	if err := c.Bind(&payload); err != nil {

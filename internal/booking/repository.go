@@ -18,7 +18,7 @@ func NewBookingRepository(server *server.Server) *BookingRepository {
 	}
 }
 
-func (r *BookingRepository) CreateBooking(ctx context.Context, payload *CreateBookingPayload) (*Booking, error) {
+func (r *BookingRepository) CreateBooking(ctx context.Context, userID string, payload *CreateBookingPayload) (*Booking, error) {
 	stmt := `
 		INSERT INTO bookings (
 			user_id, 
@@ -40,7 +40,7 @@ func (r *BookingRepository) CreateBooking(ctx context.Context, payload *CreateBo
 	`
 
 	rows, err := r.server.DB.Query(ctx, stmt, pgx.NamedArgs{
-		"user_id":     payload.UserID,
+		"user_id":     userID,
 		"property_id": payload.PropertyID,
 		"total_price": payload.TotalPrice,
 		"status":      payload.Status,
@@ -48,13 +48,13 @@ func (r *BookingRepository) CreateBooking(ctx context.Context, payload *CreateBo
 		"check_out":   payload.CheckOut,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute create booking query for user_id=%v property_id=%v: %w", payload.UserID, *payload.PropertyID, err)
+		return nil, fmt.Errorf("failed to execute create booking query for user_id=%v property_id=%v: %w", userID, *payload.PropertyID, err)
 	}
 	defer rows.Close()
 
 	bookingItem, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Booking])
 	if err != nil {
-		return nil, fmt.Errorf("failed to collect row from table:bookings for user_id=%v property_id=%v: %w", *payload.UserID, *payload.PropertyID, err)
+		return nil, fmt.Errorf("failed to collect row from table:bookings for user_id=%v property_id=%v: %w", userID, *payload.PropertyID, err)
 	}
 
 	return &bookingItem, nil
