@@ -17,7 +17,7 @@ func (p *CreateBookingPayload) Validate() error {
 }
 
 type ConfirmBookingPayload struct {
-	BookingID *int    `json:"bookingId" validate:"required"`
+	BookingID *string `json:"bookingId" validate:"required"`
 	Status    *string `json:"status" validate:"omitempty,oneof=pending confirmed cancelled"`
 }
 

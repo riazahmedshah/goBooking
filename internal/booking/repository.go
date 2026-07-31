@@ -99,12 +99,12 @@ func (r *BookingRepository) ConfirmBooking(ctx context.Context, tx pgx.Tx, paylo
 		"id":     payload.BookingID,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute confirm booking query for id=%d: %w", *payload.BookingID, err)
+		return nil, fmt.Errorf("failed to execute confirm booking query for id=%s: %w", *payload.BookingID, err)
 	}
 
 	data, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[Booking])
 	if err != nil {
-		return nil, fmt.Errorf("failed to collect row from table:bookings for id=%d: %w", *payload.BookingID, err)
+		return nil, fmt.Errorf("failed to collect row from table:bookings for id=%s: %w", *payload.BookingID, err)
 	}
 
 	return &data, nil
@@ -114,7 +114,7 @@ func (r *BookingRepository) FinalizeIdempotencyKey(ctx context.Context, tx pgx.T
 	stmt := `
 		UPDATE idempotency_keys
 		SET is_finalized = true
-		WHERE idem_key = @key
+		WHERE key = @key
 	`
 	_, err := tx.Exec(ctx, stmt, pgx.NamedArgs{
 		"key": key,
@@ -131,7 +131,9 @@ func (r *BookingRepository) GetIdempotencyKeyWithLock(ctx context.Context, tx pg
 			id, 
 			key, 
 			booking_id, 
-			is_finalized
+			is_finalized,
+			created_at,
+			updated_at
 		FROM 
 			idempotency_keys
 		WHERE 

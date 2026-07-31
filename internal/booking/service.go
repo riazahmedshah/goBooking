@@ -34,12 +34,12 @@ func (b *BookingService) CreateBooking(ctx context.Context, userID string, paylo
 
 	tryLockCtx, cancelTryLock := context.WithTimeout(detachedCtx, 5*time.Millisecond)
 	defer cancelTryLock()
-	lockCtx, _, err := b.server.Locker.WithContext(tryLockCtx, lockKey)
+	_, _, err := b.server.Locker.WithContext(tryLockCtx, lockKey)
 	if err != nil {
 		return nil, fmt.Errorf("property is currently being booked by another request, please try again: %w", err)
 	}
 
-	booking, err := b.bookingRepo.CreateBooking(lockCtx, userID, payload)
+	booking, err := b.bookingRepo.CreateBooking(detachedCtx, userID, payload)
 	if err != nil {
 		return nil, err
 	}
@@ -49,7 +49,7 @@ func (b *BookingService) CreateBooking(ctx context.Context, userID string, paylo
 		return nil, fmt.Errorf("failed to generate idempotency key: %w", err)
 	}
 
-	idempotencyData, err := b.bookingRepo.CreateIdempotencyKey(lockCtx, key, booking.ID)
+	idempotencyData, err := b.bookingRepo.CreateIdempotencyKey(detachedCtx, key, booking.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create idempotency key: %w", err)
 	}
