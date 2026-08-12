@@ -6,26 +6,30 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/hibiken/asynq"
 	"github.com/riazahmedshah/go-booking/internal/lib/utils"
 	"github.com/riazahmedshah/go-booking/internal/notification"
 	"github.com/riazahmedshah/go-booking/internal/server"
 )
 
 type BookingService struct {
-	server      *server.Server
-	bookingRepo *BookingRepository
-	asynqClient *asynq.Client
+	server       *server.Server
+	bookingRepo  *BookingRepository
+	notification *notification.NotificationService
 }
 
-func NewBookingService(server *server.Server, bookingRepo *BookingRepository) *BookingService {
+func NewBookingService(server *server.Server, bookingRepo *BookingRepository, notification *notification.NotificationService) *BookingService {
 	return &BookingService{
-		server:      server,
-		bookingRepo: bookingRepo,
+		server:       server,
+		bookingRepo:  bookingRepo,
+		notification: notification,
 	}
 }
 
 func (b *BookingService) CreateBooking(ctx context.Context, userID string, payload *CreateBookingPayload) (any, error) {
+
+	if b.notification == nil {
+		slog.Error("CRITICAL: b.notification is NIL inside BookingService!")
+	}
 
 	lockKey := fmt.Sprintf("booking:%s", *payload.PropertyID)
 	// lockTimeoutCtx, cancelTimeout := context.WithTimeout(ctx, 500*time.Millisecond)
@@ -58,7 +62,8 @@ func (b *BookingService) CreateBooking(ctx context.Context, userID string, paylo
 
 }
 
-func (b *BookingService) ConfirmBooking(ctx context.Context, key string, payload *ConfirmBookingPayload) (any, error) {
+func (b *BookingService) ConfirmBooking(ctx context.Context, key string, userID string, payload *ConfirmBookingPayload) (any, error) {
+
 	tx, err := b.server.DB.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
@@ -87,7 +92,8 @@ func (b *BookingService) ConfirmBooking(ctx context.Context, key string, payload
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 
-	if err := notification.EnqueueBookingCompletionTask(b.asynqClient, &notification.BookingCompletionTask{
+	if err := b.notification.EnqueueBookingCompletionTask(&notification.BookingCompletionTask{
+		UserID:     userID,
 		BookingID:  booking.ID,
 		TotalPrice: booking.TotalPrice,
 	}); err != nil {

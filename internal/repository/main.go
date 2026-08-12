@@ -15,6 +15,7 @@ type Repositories struct {
 
 func NewRepositories(s *server.Server) *Repositories {
 	userRepo := user.NewUserRepository(s)
+	s.Notification.SetUserRepo(userRepo)
 	propertyRepo := property.NewPropertyRepository(s)
 	bookingRepo := booking.NewBookingRepository(s)
 	return &Repositories{

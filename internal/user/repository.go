@@ -95,3 +95,30 @@ func (ur *UserRepository) GetUserByEmail(ctx context.Context, email string) (*Us
 
 	return user, nil
 }
+
+func (ur *UserRepository) GetUserEmail(ctx context.Context, userID string) (string, error) {
+	stmt := `
+		SELECT
+			email
+		FROM users
+		WHERE
+			id=@userId
+	`
+
+	rows, err := ur.server.DB.Query(ctx, stmt, pgx.NamedArgs{
+		"userId": userID,
+	})
+
+	if err != nil {
+		return "", fmt.Errorf("failed to execute get user query: %w", err)
+	}
+	defer rows.Close()
+
+	userEmail, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[UserEmail])
+	if err != nil {
+		return "nil", err
+	}
+
+	return userEmail.Email, nil
+
+}

@@ -1,6 +1,7 @@
 package notification
 
 import (
+	"context"
 	"log/slog"
 
 	"github.com/hibiken/asynq"
@@ -10,8 +11,13 @@ import (
 
 type NotificationService struct {
 	client      *asynq.Client
-	server      *asynq.Server
-	emailClient *email.Client
+	asynqServer *asynq.Server
+	userRepo    UserEmailFetcher
+	emailClient *email.SMTPClient
+}
+
+type UserEmailFetcher interface {
+	GetUserEmail(ctx context.Context, userID string) (string, error)
 }
 
 func NewNotificationService(cfg *config.Config) *NotificationService {
@@ -28,9 +34,12 @@ func NewNotificationService(cfg *config.Config) *NotificationService {
 	)
 	return &NotificationService{
 		client:      client,
-		server:      server,
-		emailClient: email.NewClient(cfg.Integration),
+		asynqServer: server,
 	}
+}
+
+func (n *NotificationService) SetUserRepo(ur UserEmailFetcher) {
+	n.userRepo = ur
 }
 
 func (n *NotificationService) Start() error {
@@ -39,7 +48,7 @@ func (n *NotificationService) Start() error {
 	mux.HandleFunc(TaskBookingCompletion, n.handleBookingCompletion)
 
 	slog.Info("Starting background workers...")
-	if err := n.server.Start(mux); err != nil {
+	if err := n.asynqServer.Start(mux); err != nil {
 		return err
 	}
 	return nil
@@ -47,6 +56,6 @@ func (n *NotificationService) Start() error {
 
 func (n *NotificationService) Stop() {
 	slog.Info("Shutting down background workers...")
-	n.server.Shutdown()
+	n.asynqServer.Shutdown()
 	n.client.Close()
 }

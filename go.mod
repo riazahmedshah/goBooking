@@ -13,7 +13,6 @@ require (
 	github.com/labstack/echo-jwt/v4 v4.4.0
 	github.com/labstack/echo/v4 v4.15.4
 	github.com/redis/rueidis v1.0.76
-	github.com/resend/resend-go/v3 v3.9.2
 	golang.org/x/crypto v0.53.0
 )
 

@@ -6,7 +6,7 @@ import (
 	"github.com/hibiken/asynq"
 )
 
-func EnqueueBookingCompletionTask(client *asynq.Client, task *BookingCompletionTask) error {
+func (n *NotificationService) EnqueueBookingCompletionTask(task *BookingCompletionTask) error {
 	payload, err := json.Marshal(task)
 
 	if err != nil {
@@ -15,6 +15,6 @@ func EnqueueBookingCompletionTask(client *asynq.Client, task *BookingCompletionT
 
 	asynqTask := asynq.NewTask(TaskBookingCompletion, payload)
 
-	_, err = client.Enqueue(asynqTask)
+	_, err = n.client.Enqueue(asynqTask)
 	return err
 }

@@ -12,6 +12,7 @@ import (
 
 	"github.com/riazahmedshah/go-booking/internal/config"
 	"github.com/riazahmedshah/go-booking/internal/handler"
+	"github.com/riazahmedshah/go-booking/internal/notification"
 	"github.com/riazahmedshah/go-booking/internal/repository"
 	"github.com/riazahmedshah/go-booking/internal/router"
 	"github.com/riazahmedshah/go-booking/internal/server"
@@ -31,7 +32,9 @@ func main() {
 	}
 
 	repos := repository.NewRepositories(srv)
-	service, err := service.NewService(srv, repos)
+	notificationService := notification.NewNotificationService(cfg)
+	notificationService.InitHandlers(cfg)
+	service, err := service.NewService(srv, repos, notificationService)
 	if err != nil {
 		slog.Error("failed to create service", "error", err)
 		os.Exit(1)

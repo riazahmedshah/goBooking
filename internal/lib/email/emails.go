@@ -1,6 +1,6 @@
 package email
 
-func (c *Client) SendConfirmationEmail(to string, bookingID string, totalPrice float64) error {
+func (c *SMTPClient) SendConfirmationEmail(to string, bookingID string, totalPrice float64) error {
 
 	data := map[string]any{
 		"BookingID": bookingID,
@@ -12,5 +12,5 @@ func (c *Client) SendConfirmationEmail(to string, bookingID string, totalPrice f
 		"TotalPrice": totalPrice,
 	}
 
-	return c.SendEmail(to, "Booking Confirmation", "confirmation", data)
+	return c.SendEmail(to, "Booking Confirmation", "success-booking", data)
 }

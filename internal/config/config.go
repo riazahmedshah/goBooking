@@ -37,6 +37,8 @@ type RedisConfig struct {
 }
 
 type IntegrationConfig struct {
+	SMTPHost     string `validate:"omitempty"`
+	SMTPPort     string `validate:"omitempty"`
 	ResendAPIKey string `validate:"omitempty"`
 }
 
@@ -85,6 +87,8 @@ func LoadConfig() (*Config, error) {
 		},
 		Integration: IntegrationConfig{
 			ResendAPIKey: getEnv("INTEGRATION_RESEND_API_KEY", ""),
+			SMTPHost:     getEnv("SMTP_HOST", "localhost"),
+			SMTPPort:     getEnv("SMTP_PORT", "1025"),
 		},
 		JWT: JWTConfig{
 			SecretKey: getEnv("JWT_SECRET_KEY", ""),

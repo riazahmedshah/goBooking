@@ -3,6 +3,7 @@ package notification
 const TaskBookingCompletion = "email:booking_completion"
 
 type BookingCompletionTask struct {
+	UserID    string `json:"user_id"`
 	BookingID string `json:"booking_id"`
 	// PropertyName string    `json:"property_name"`
 	// StartDate    time.Time `json:"start_date"`
