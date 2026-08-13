@@ -2,6 +2,7 @@ package property
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 
 	"github.com/riazahmedshah/go-booking/internal/server"
@@ -47,4 +48,49 @@ func (ps *PropertyService) GetPropertyByID(ctx context.Context, propertyID strin
 	}
 
 	return property, nil
+}
+
+func (ps *PropertyService) GetPropertyAvailability(ctx context.Context, propertyID string) ([]MonthAvailability, error) {
+	rows, err := ps.propertyRepo.GetPropertyAvailability(ctx, propertyID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Group by "Year-Month" using a Map
+	// Key: "2026-08", Value: pointer to MonthAvailability
+	monthMap := make(map[string]*MonthAvailability)
+	var result []MonthAvailability
+
+	for _, item := range rows {
+		y, m, _ := item.Date.Date()
+		mapKey := fmt.Sprintf("%d-%02d", y, int(m))
+
+		if _, exists := monthMap[mapKey]; !exists {
+			monthMap[mapKey] = &MonthAvailability{
+				Month: int(m),
+				Year:  y,
+				Days:  []DayAvailability{},
+			}
+
+			result = append(result, MonthAvailability{
+				Month: int(m),
+				Year:  y,
+			})
+		}
+
+		dayObj := DayAvailability{
+			CalendarDate: item.Date.Format("2006-01-02"),
+			Available:    item.IsAvailable,
+		}
+
+		monthMap[mapKey].Days = append(monthMap[mapKey].Days, dayObj)
+	}
+
+	var finalCalendar []MonthAvailability
+	for key, mVal := range monthMap {
+		_ = key
+		finalCalendar = append(finalCalendar, *mVal)
+	}
+
+	return finalCalendar, nil
 }

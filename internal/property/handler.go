@@ -57,3 +57,13 @@ func (ph *PropertyHandler) GetPropertyById(c echo.Context) error {
 	}
 	return c.JSON(200, property)
 }
+
+func (ph *PropertyHandler) GetPropertyAvailability(c echo.Context) error {
+	propertyID := c.Param("id")
+	availability, err := ph.propertyService.GetPropertyAvailability(c.Request().Context(), propertyID)
+	if err != nil {
+		slog.Error("failed to retrieve property availability", "error", err)
+		return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
+	}
+	return c.JSON(200, availability)
+}

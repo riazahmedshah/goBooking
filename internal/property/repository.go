@@ -171,3 +171,28 @@ func (pr *PropertyRepository) DeleteProperty(ctx context.Context, propertyID str
 
 	return nil
 }
+
+func (pr *PropertyRepository) GetPropertyAvailability(ctx context.Context, propertyID string) ([]*PropertyAvailabiliy, error) {
+	stmt := `
+		SELECT
+			id, property_id, date, is_available, booking_id, created_at, updated_at
+		FROM
+			property_availability
+		WHERE
+			property_id = @property_id
+	`
+	rows, err := pr.server.DB.Query(ctx, stmt, pgx.NamedArgs{
+		"property_id": propertyID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %w", err)
+	}
+	defer rows.Close()
+
+	availability, err := pgx.CollectRows(rows, pgx.RowToAddrOfStructByName[PropertyAvailabiliy])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect row from table:property_availability for property_id=%s: %w", propertyID, err)
+	}
+
+	return availability, nil
+}

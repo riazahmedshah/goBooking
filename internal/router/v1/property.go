@@ -9,6 +9,7 @@ import (
 func registerPropertyRoutes(r *echo.Group, h *handler.Handler, middlewares *middleware.Middlewares) {
 	r.GET("/property", h.PropertyHandler.GetAllProperties)
 	r.GET("/property/:id", h.PropertyHandler.GetPropertyById)
+	r.GET("/property/:id/availability", h.PropertyHandler.GetPropertyAvailability)
 	property := r.Group("/property")
 	property.Use(middlewares.Auth.RequireAuth())
 	property.POST("", h.PropertyHandler.CreateProperty, middlewares.Auth.RequireRole("host"))
