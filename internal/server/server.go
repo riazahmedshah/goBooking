@@ -13,15 +13,13 @@ import (
 	"github.com/redis/rueidis/rueidislock"
 	"github.com/riazahmedshah/go-booking/internal/config"
 	"github.com/riazahmedshah/go-booking/internal/database"
-	"github.com/riazahmedshah/go-booking/internal/notification"
 )
 
 type Server struct {
-	Config       *config.Config
-	DB           *pgxpool.Pool
-	httpServer   *http.Server
-	Locker       rueidislock.Locker
-	Notification *notification.NotificationService
+	Config     *config.Config
+	DB         *pgxpool.Pool
+	httpServer *http.Server
+	Locker     rueidislock.Locker
 }
 
 func New(cfg *config.Config) (*Server, error) {
@@ -62,18 +60,10 @@ func New(cfg *config.Config) (*Server, error) {
 		return nil, fmt.Errorf("failed to initialize Redis client: %w", err)
 	}
 
-	notificationService := notification.NewNotificationService(cfg)
-	notificationService.InitHandlers(cfg)
-	// Start job server
-	if err := notificationService.Start(); err != nil {
-		return nil, err
-	}
-
 	server := &Server{
-		Config:       cfg,
-		DB:           db,
-		Locker:       locker,
-		Notification: notificationService,
+		Config: cfg,
+		DB:     db,
+		Locker: locker,
 	}
 
 	return server, nil

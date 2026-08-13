@@ -34,6 +34,13 @@ func main() {
 	repos := repository.NewRepositories(srv)
 	notificationService := notification.NewNotificationService(cfg)
 	notificationService.InitHandlers(cfg)
+	notificationService.SetUserRepo(repos.UserRepository)
+
+	if err := notificationService.Start(); err != nil {
+		slog.Error("failed to start notification worker", "error", err)
+		os.Exit(1)
+	}
+
 	service, err := service.NewService(srv, repos, notificationService)
 	if err != nil {
 		slog.Error("failed to create service", "error", err)
@@ -64,4 +71,7 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		slog.Error("shutdown error", "error", err)
 	}
+
+	notificationService.Stop()
+	slog.Info("notification workers stopped successfully")
 }

@@ -36,7 +36,7 @@ func (b *BookingService) CreateBooking(ctx context.Context, userID string, paylo
 	// defer cancelTimeout()
 	detachedCtx := context.WithoutCancel(ctx)
 
-	tryLockCtx, cancelTryLock := context.WithTimeout(detachedCtx, 5*time.Millisecond)
+	tryLockCtx, cancelTryLock := context.WithTimeout(detachedCtx, 5*time.Second)
 	defer cancelTryLock()
 	_, _, err := b.server.Locker.WithContext(tryLockCtx, lockKey)
 	if err != nil {
