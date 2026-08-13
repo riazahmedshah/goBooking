@@ -30,7 +30,6 @@ func (n *NotificationService) handleBookingCompletion(ctx context.Context, t *as
 		return fmt.Errorf("userRepo is nil")
 	}
 	userEmail, err := n.userRepo.GetUserEmail(ctx, p.UserID)
-	slog.Info(userEmail)
 	if err != nil {
 		slog.Error("Failed to resolve user email", "user_id", p.UserID, "error", err)
 		return fmt.Errorf("failed to resolve user email for user %s: %w", p.UserID, err)

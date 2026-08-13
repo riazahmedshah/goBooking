@@ -99,12 +99,12 @@ func (r *BookingRepository) ConfirmBooking(ctx context.Context, tx pgx.Tx, paylo
 		"id":     payload.BookingID,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute confirm booking query for id=%s: %w", *payload.BookingID, err)
+		return nil, fmt.Errorf("failed to execute confirm booking query for id=%s: %w", payload.BookingID, err)
 	}
 
 	data, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[Booking])
 	if err != nil {
-		return nil, fmt.Errorf("failed to collect row from table:bookings for id=%s: %w", *payload.BookingID, err)
+		return nil, fmt.Errorf("failed to collect row from table:bookings for id=%s: %w", payload.BookingID, err)
 	}
 
 	return &data, nil

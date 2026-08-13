@@ -2,10 +2,12 @@ package booking
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
 
+	"github.com/redis/rueidis"
 	"github.com/riazahmedshah/go-booking/internal/lib/utils"
 	"github.com/riazahmedshah/go-booking/internal/notification"
 	"github.com/riazahmedshah/go-booking/internal/server"
@@ -25,27 +27,53 @@ func NewBookingService(server *server.Server, bookingRepo *BookingRepository, no
 	}
 }
 
+var ErrPropertyHeld = errors.New("property is currently held by another booking request, please try again later")
+
 func (b *BookingService) CreateBooking(ctx context.Context, userID string, payload *CreateBookingPayload) (any, error) {
 
-	if b.notification == nil {
-		slog.Error("CRITICAL: b.notification is NIL inside BookingService!")
+	// Example key: "hold:property:prop_123:dates:2026-08-15_2026-08-17"
+	holdKey := fmt.Sprintf("hold:property:%s:dates:%s_%s",
+		*payload.PropertyID,
+		*payload.CheckIn,
+		*payload.CheckOut,
+	)
+
+	cmd := b.server.RedisClient.B().
+		Set().
+		Key(holdKey).
+		Value(userID). // UserID or Booking Ref as value
+		Nx().          // Set Only If Not Exists
+		Ex(59 * time.Second).
+		Build()
+
+	res := b.server.RedisClient.Do(ctx, cmd)
+	// if err := res.Error(); err != nil {
+	// 	return nil, fmt.Errorf("failed to process hold in cache: %w", err)
+	// }
+
+	isSet, err := res.AsBool()
+	if !isSet {
+		valCmd := b.server.RedisClient.B().Get().Key(holdKey).Build()
+		heldByUserID, getErr := b.server.RedisClient.Do(ctx, valCmd).ToString()
+
+		if getErr == nil && heldByUserID == userID {
+			// Same user ne dubara request mari hai
+			return nil, fmt.Errorf("your booking is already in progress, please check your payments or wait a moment")
+		}
+		return nil, ErrPropertyHeld
 	}
 
-	lockKey := fmt.Sprintf("booking:%s", *payload.PropertyID)
-	// lockTimeoutCtx, cancelTimeout := context.WithTimeout(ctx, 500*time.Millisecond)
-	// defer cancelTimeout()
+	// Unexpected actual Redis network/connection error check
+	if err != nil && !rueidis.IsRedisNil(err) {
+		return nil, fmt.Errorf("failed to process hold in cache: %w", err)
+	}
+
 	detachedCtx := context.WithoutCancel(ctx)
-
-	tryLockCtx, cancelTryLock := context.WithTimeout(detachedCtx, 5*time.Second)
-	defer cancelTryLock()
-	_, _, err := b.server.Locker.WithContext(tryLockCtx, lockKey)
-	if err != nil {
-		return nil, fmt.Errorf("property is currently being booked by another request, please try again: %w", err)
-	}
 
 	booking, err := b.bookingRepo.CreateBooking(detachedCtx, userID, payload)
 	if err != nil {
-		return nil, err
+		_ = b.server.RedisClient.Do(detachedCtx, b.server.RedisClient.B().Del().Key(holdKey).Build())
+		return nil, fmt.Errorf("failed to create booking record: %w", err)
 	}
 
 	key, err := utils.GenerateIdempotencyKey()
