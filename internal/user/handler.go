@@ -25,12 +25,9 @@ func (uh *UserHandler) CreateUser(c echo.Context) error {
 	if err := c.Bind(&userPayload); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid request payload")
 	}
-	if err := c.Validate(&userPayload); err != nil {
-		return err // Returns the formatted HTTP 400 bad request error
-	}
 	err := uh.userService.CreateUser(c.Request().Context(), &userPayload)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, err)
+		return err
 	}
 	return c.JSON(http.StatusCreated, map[string]string{"message": "user created successfully"})
 }
@@ -40,15 +37,10 @@ func (uh *UserHandler) Login(c echo.Context) error {
 	if err := c.Bind(&loginPayload); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid request payload")
 	}
-	if err := c.Validate(&loginPayload); err != nil {
-		return err // Returns the formatted HTTP 400 bad request error
-	}
+
 	token, err := uh.userService.Login(c.Request().Context(), &loginPayload)
 	if err != nil {
-		if err.Error() == "invalid email or password" {
-			return echo.NewHTTPError(http.StatusUnauthorized, "invalid email or password")
-		}
-		return echo.NewHTTPError(http.StatusInternalServerError, "an unexpected error occurred")
+		return err
 	}
 
 	cookie := new(http.Cookie)

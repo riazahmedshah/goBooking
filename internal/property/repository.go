@@ -2,10 +2,12 @@ package property
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/riazahmedshah/go-booking/internal/errs"
 	"github.com/riazahmedshah/go-booking/internal/server"
 )
@@ -38,6 +40,11 @@ func (pr *PropertyRepository) Createproperty(ctx context.Context, hostID string,
 	})
 
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return nil, errs.ErrPropertyTitleExists
+		}
+
 		return nil, fmt.Errorf("failed to execute create property query for host_id=%s title=%s: %w", hostID, payload.Title, err)
 	}
 
@@ -91,6 +98,9 @@ func (pr *PropertyRepository) GetPropertyByID(ctx context.Context, propertyID st
 	propertyItem, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Property])
 
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errs.ErrPropertyNotFound
+		}
 		return nil, fmt.Errorf("failed to collect row from table:properties for property_id=%s: %w", propertyID, err)
 	}
 
@@ -128,7 +138,7 @@ func (pr *PropertyRepository) UpdateProperty(ctx context.Context, propertyID str
 	}
 
 	if len(setClauses) == 0 {
-		return nil, errs.NewBadRequestError("no fields to update", nil, nil, nil)
+		return nil, errs.ErrBadUpdateRequest
 	}
 
 	stmt += strings.Join(setClauses, ", ")
@@ -165,8 +175,7 @@ func (pr *PropertyRepository) DeleteProperty(ctx context.Context, propertyID str
 	}
 
 	if result.RowsAffected() == 0 {
-		code := "PROPERTY_NOT_FOUND"
-		return errs.NewNotFoundError("property not found", &code)
+		return errs.ErrPropertyNotFound
 	}
 
 	return nil

@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/riazahmedshah/go-booking/internal/errs"
 	"github.com/riazahmedshah/go-booking/internal/server"
 )
 
@@ -50,6 +52,10 @@ func (ur *UserRepository) CreateUser(ctx context.Context, payload *CreateUserPay
 	})
 
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			return errs.ErrDuplicateEmail
+		}
 		return fmt.Errorf("failed to execute create user query for email=%s: %w", payload.Email, err)
 	}
 
@@ -68,7 +74,7 @@ func (ur *UserRepository) GetUserByID(ctx context.Context, userID string) (*User
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("user not found with id=%s: %w", userID, err)
+			return nil, errs.ErrUserNotFound
 		}
 		return nil, fmt.Errorf("failed to collect row from table:users for user with id=%s: %w", userID, err)
 	}
@@ -88,7 +94,7 @@ func (ur *UserRepository) GetUserByEmail(ctx context.Context, email string) (*Us
 	user, err := ur.getUser(ctx, stmt, pgx.NamedArgs{"email": email})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("user not found with email=%s: %w", email, err)
+			return nil, errs.ErrUserNotFound
 		}
 		return nil, fmt.Errorf("failed to collect row from table:users for user with email=%s: %w", email, err)
 	}
@@ -116,7 +122,10 @@ func (ur *UserRepository) GetUserEmail(ctx context.Context, userID string) (stri
 
 	userEmail, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[UserEmail])
 	if err != nil {
-		return "nil", err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", errs.ErrUserNotFound
+		}
+		return "nil", fmt.Errorf("failed to collect row from table:users for user with id=%s: %w", userID, err)
 	}
 
 	return userEmail.Email, nil

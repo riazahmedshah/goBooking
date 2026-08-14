@@ -2,10 +2,19 @@ package property
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"log/slog"
+	"net/http"
 
+	"github.com/riazahmedshah/go-booking/internal/errs"
 	"github.com/riazahmedshah/go-booking/internal/server"
+)
+
+const (
+	msgCreatePropertyFailed          = "unexpected error occurred while creating property"
+	msgGetAllPropertiesFailed        = "unexpected error occurred while retrieving all properties"
+	msgGetPropertyByIDFailed         = "unable to fetch property details"
+	msgGetPropertyAvailabilityFailed = "unexpected error occurred while retrieving property availability"
 )
 
 type PropertyService struct {
@@ -23,8 +32,11 @@ func NewPropertyService(server *server.Server, propertyRepo *PropertyRepository)
 func (ps *PropertyService) CreateProperty(ctx context.Context, hostID string, payload *CreatePropertyPayload) (*Property, error) {
 	property, err := ps.propertyRepo.Createproperty(ctx, hostID, payload)
 	if err != nil {
-		slog.Error("database failure during property creation", "error", err)
-		return nil, err
+		if errors.Is(err, errs.ErrPropertyTitleExists) {
+			return nil, err
+		}
+
+		return nil, errs.New(http.StatusInternalServerError, msgCreatePropertyFailed, err)
 	}
 
 	return property, nil
@@ -33,8 +45,7 @@ func (ps *PropertyService) CreateProperty(ctx context.Context, hostID string, pa
 func (ps *PropertyService) GetAllProperties(ctx context.Context) ([]*Property, error) {
 	properties, err := ps.propertyRepo.GetAllProperties(ctx)
 	if err != nil {
-		slog.Error("database failure during property retrieval", "error", err)
-		return nil, err
+		return nil, errs.New(http.StatusInternalServerError, msgGetAllPropertiesFailed, err)
 	}
 
 	return properties, nil
@@ -43,8 +54,11 @@ func (ps *PropertyService) GetAllProperties(ctx context.Context) ([]*Property, e
 func (ps *PropertyService) GetPropertyByID(ctx context.Context, propertyID string) (*Property, error) {
 	property, err := ps.propertyRepo.GetPropertyByID(ctx, propertyID)
 	if err != nil {
-		slog.Error("database failure during property retrieval by ID", "error", err)
-		return nil, err
+		if errors.Is(err, errs.ErrPropertyNotFound) {
+			return nil, err
+		}
+
+		return nil, errs.New(http.StatusInternalServerError, msgGetPropertyByIDFailed, err)
 	}
 
 	return property, nil
@@ -53,7 +67,7 @@ func (ps *PropertyService) GetPropertyByID(ctx context.Context, propertyID strin
 func (ps *PropertyService) GetPropertyAvailability(ctx context.Context, propertyID string) ([]MonthAvailability, error) {
 	rows, err := ps.propertyRepo.GetPropertyAvailability(ctx, propertyID)
 	if err != nil {
-		return nil, err
+		return nil, errs.New(http.StatusInternalServerError, msgGetPropertyAvailabilityFailed, err)
 	}
 
 	// Group by "Year-Month" using a Map

@@ -3,9 +3,10 @@ package user
 import (
 	"context"
 	"errors"
-	"log/slog"
+	"net/http"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/riazahmedshah/go-booking/internal/errs"
 	"github.com/riazahmedshah/go-booking/internal/lib/utils"
 	"github.com/riazahmedshah/go-booking/internal/server"
 	"golang.org/x/crypto/bcrypt"
@@ -17,8 +18,8 @@ type UserService struct {
 }
 
 var (
-	ErrEmailAlreadyExists = errors.New("email address is already registered")
-	ErrInternal           = errors.New("an unexpected error occurred")
+	msgCreateUserFailed = "failed to create user"
+	msgLoginFailed      = "failed to login user"
 )
 
 func NewUserService(server *server.Server, ur *UserRepository) *UserService {
@@ -30,42 +31,41 @@ func NewUserService(server *server.Server, ur *UserRepository) *UserService {
 
 func (us *UserService) CreateUser(ctx context.Context, payload *CreateUserPayload) error {
 	user, err := us.userRepo.GetUserByEmail(ctx, payload.Email)
-	// if err == nil && errors.Is(err, pgx.ErrNoRows) {
-	// 	slog.Error("database failure during email check", "error", err)
-	// 	return ErrInternal
-	// }
 	if err == nil && user != nil {
-		return ErrEmailAlreadyExists
+		return errs.ErrDuplicateEmail
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(payload.Password), 10)
 	if err != nil {
-		return ErrInternal
+		return errs.New(http.StatusInternalServerError, msgCreateUserFailed, err)
 	}
 
 	payload.Password = string(hash)
-	return us.userRepo.CreateUser(ctx, payload)
+	if err := us.userRepo.CreateUser(ctx, payload); err != nil {
+		return errs.New(http.StatusInternalServerError, msgCreateUserFailed, err)
+	}
+	return nil
 }
 
 func (us *UserService) Login(ctx context.Context, payload *LoginPayload) (string, error) {
 	exixtingUser, err := us.userRepo.GetUserByEmail(ctx, payload.Email)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", errors.New("invalid email or password")
+			return "", errs.ErrUserNotFound
 		}
-		slog.Error("database failure during login", "error", err)
-		return "", ErrInternal
+
+		return "", errs.New(http.StatusInternalServerError, msgLoginFailed, err)
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(exixtingUser.Password), []byte(payload.Password))
 	if err != nil {
-		return "", errors.New("invalid email/password")
+		return "", errs.ErrInvalidPassword
 	}
 
 	token, err := utils.GenerateJWTToken(exixtingUser.ID, exixtingUser.Role, []byte(us.server.Config.JWT.SecretKey))
 	if err != nil {
-		slog.Error("failed to generate JWT token", "error", err)
-		return "", ErrInternal
+
+		return "", errs.New(http.StatusInternalServerError, msgLoginFailed, err)
 	}
 
 	return token, nil
