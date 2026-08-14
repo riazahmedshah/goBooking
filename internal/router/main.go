@@ -13,6 +13,7 @@ func NewRouter(s *server.Server, h *handler.Handler) *echo.Echo {
 	middlewares := middleware.NewMiddleware(s)
 	router := echo.New()
 
+	router.HTTPErrorHandler = middleware.ErrMiddleware()
 	router.Validator = validation.NewCustomValidator()
 
 	// Register your routes here

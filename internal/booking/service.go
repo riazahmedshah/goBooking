@@ -2,12 +2,13 @@ package booking
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"time"
 
 	"github.com/redis/rueidis"
+	"github.com/riazahmedshah/go-booking/internal/errs"
 	"github.com/riazahmedshah/go-booking/internal/lib/utils"
 	"github.com/riazahmedshah/go-booking/internal/notification"
 	"github.com/riazahmedshah/go-booking/internal/server"
@@ -27,8 +28,6 @@ func NewBookingService(server *server.Server, bookingRepo *BookingRepository, no
 	}
 }
 
-var ErrPropertyHeld = errors.New("property is currently held by another booking request, please try again later")
-
 func (b *BookingService) CreateBooking(ctx context.Context, userID string, payload *CreateBookingPayload) (any, error) {
 
 	// Example key: "hold:property:prop_123:dates:2026-08-15_2026-08-17"
@@ -47,9 +46,6 @@ func (b *BookingService) CreateBooking(ctx context.Context, userID string, paylo
 		Build()
 
 	res := b.server.RedisClient.Do(ctx, cmd)
-	// if err := res.Error(); err != nil {
-	// 	return nil, fmt.Errorf("failed to process hold in cache: %w", err)
-	// }
 
 	isSet, err := res.AsBool()
 	if !isSet {
@@ -57,15 +53,15 @@ func (b *BookingService) CreateBooking(ctx context.Context, userID string, paylo
 		heldByUserID, getErr := b.server.RedisClient.Do(ctx, valCmd).ToString()
 
 		if getErr == nil && heldByUserID == userID {
-			// Same user ne dubara request mari hai
-			return nil, fmt.Errorf("your booking is already in progress, please check your payments or wait a moment")
+			return nil, errs.ErrBookingInProgress
 		}
-		return nil, ErrPropertyHeld
+		return nil, errs.ErrPropertyHeld
 	}
 
 	// Unexpected actual Redis network/connection error check
 	if err != nil && !rueidis.IsRedisNil(err) {
-		return nil, fmt.Errorf("failed to process hold in cache: %w", err)
+		// slog.Error("redis hold error", "err", err, "user_id", userID, "hold_key", holdKey)
+		return nil, errs.New(http.StatusInternalServerError, "failed to process booking hold", err)
 	}
 
 	detachedCtx := context.WithoutCancel(ctx)
@@ -73,17 +69,20 @@ func (b *BookingService) CreateBooking(ctx context.Context, userID string, paylo
 	booking, err := b.bookingRepo.CreateBooking(detachedCtx, userID, payload)
 	if err != nil {
 		_ = b.server.RedisClient.Do(detachedCtx, b.server.RedisClient.B().Del().Key(holdKey).Build())
-		return nil, fmt.Errorf("failed to create booking record: %w", err)
+		// slog.Error("failed to create booking record in db", "err", err, "user_id", userID)
+		return nil, errs.New(http.StatusInternalServerError, "failed to create booking record", err)
 	}
 
 	key, err := utils.GenerateIdempotencyKey()
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate idempotency key: %w", err)
+		// slog.Error("failed to generate idempotency key", "err", err)
+		return nil, errs.New(http.StatusInternalServerError, "failed to process booking security key", err)
 	}
 
 	idempotencyData, err := b.bookingRepo.CreateIdempotencyKey(detachedCtx, key, booking.ID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create idempotency key: %w", err)
+		// slog.Error("failed to store idempotency key in db", "err", err, "booking_id", booking.ID)
+		return nil, errs.New(http.StatusInternalServerError, "failed to finalize booking reference", err)
 	}
 
 	return idempotencyData.Key, nil

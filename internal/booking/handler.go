@@ -31,8 +31,7 @@ func (bh *BookingHandler) CreateBooking(c echo.Context) error {
 
 	idempotencyKey, err := bh.bookingService.CreateBooking(c.Request().Context(), userID, &payload)
 	if err != nil {
-		slog.Error("failed to create booking", "error", err)
-		return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")
+		return err
 	}
 
 	return c.JSON(201, map[string]string{"idempotency_key": idempotencyKey.(string)})
