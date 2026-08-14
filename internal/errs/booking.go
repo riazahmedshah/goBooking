@@ -20,4 +20,10 @@ var (
 		"your booking is already in progress, please check your payments or wait a moment",
 		nil,
 	)
+
+	ErrDuplicateBooking = New(
+		http.StatusConflict,
+		"booking is already finalized",
+		nil,
+	)
 )

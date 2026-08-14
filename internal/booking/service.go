@@ -14,6 +14,11 @@ import (
 	"github.com/riazahmedshah/go-booking/internal/server"
 )
 
+const (
+	msgBookingFailed       = "unable to confirm your booking, please try again"
+	msgCreateBookingFailed = "unable to initiate booking request, please try after sometime"
+)
+
 type BookingService struct {
 	server       *server.Server
 	bookingRepo  *BookingRepository
@@ -58,10 +63,8 @@ func (b *BookingService) CreateBooking(ctx context.Context, userID string, paylo
 		return nil, errs.ErrPropertyHeld
 	}
 
-	// Unexpected actual Redis network/connection error check
 	if err != nil && !rueidis.IsRedisNil(err) {
-		// slog.Error("redis hold error", "err", err, "user_id", userID, "hold_key", holdKey)
-		return nil, errs.New(http.StatusInternalServerError, "failed to process booking hold", err)
+		return nil, errs.New(http.StatusInternalServerError, msgCreateBookingFailed, err)
 	}
 
 	detachedCtx := context.WithoutCancel(ctx)
@@ -69,20 +72,17 @@ func (b *BookingService) CreateBooking(ctx context.Context, userID string, paylo
 	booking, err := b.bookingRepo.CreateBooking(detachedCtx, userID, payload)
 	if err != nil {
 		_ = b.server.RedisClient.Do(detachedCtx, b.server.RedisClient.B().Del().Key(holdKey).Build())
-		// slog.Error("failed to create booking record in db", "err", err, "user_id", userID)
-		return nil, errs.New(http.StatusInternalServerError, "failed to create booking record", err)
+		return nil, errs.New(http.StatusInternalServerError, msgCreateBookingFailed, err)
 	}
 
 	key, err := utils.GenerateIdempotencyKey()
 	if err != nil {
-		// slog.Error("failed to generate idempotency key", "err", err)
-		return nil, errs.New(http.StatusInternalServerError, "failed to process booking security key", err)
+		return nil, errs.New(http.StatusInternalServerError, msgCreateBookingFailed, err)
 	}
 
 	idempotencyData, err := b.bookingRepo.CreateIdempotencyKey(detachedCtx, key, booking.ID)
 	if err != nil {
-		// slog.Error("failed to store idempotency key in db", "err", err, "booking_id", booking.ID)
-		return nil, errs.New(http.StatusInternalServerError, "failed to finalize booking reference", err)
+		return nil, errs.New(http.StatusInternalServerError, msgCreateBookingFailed, err)
 	}
 
 	return idempotencyData.Key, nil
@@ -93,30 +93,30 @@ func (b *BookingService) ConfirmBooking(ctx context.Context, key string, userID 
 
 	tx, err := b.server.DB.Begin(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+		return nil, errs.New(http.StatusInternalServerError, msgBookingFailed, err)
 	}
 	defer tx.Rollback(ctx)
 
 	idempotencyData, err := b.bookingRepo.GetIdempotencyKeyWithLock(ctx, tx, key)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get idempotency key: %w", err)
+		return nil, errs.New(http.StatusInternalServerError, msgBookingFailed, err)
 	}
 
 	if idempotencyData.IsFinalized {
-		return nil, fmt.Errorf("booking is already finalized")
+		return nil, errs.ErrDuplicateBooking
 	}
 
 	booking, err := b.bookingRepo.ConfirmBooking(ctx, tx, payload)
 	if err != nil {
-		return nil, fmt.Errorf("failed to confirm booking: %w", err)
+		return nil, errs.New(http.StatusInternalServerError, msgBookingFailed, err)
 	}
 
 	if err := b.bookingRepo.FinalizeIdempotencyKey(ctx, tx, key); err != nil {
-		return nil, fmt.Errorf("failed to finalize idempotency key: %w", err)
+		return nil, errs.New(http.StatusInternalServerError, msgBookingFailed, err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
-		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+		return nil, errs.New(http.StatusInternalServerError, msgBookingFailed, err)
 	}
 
 	if err := b.notification.EnqueueBookingCompletionTask(&notification.BookingCompletionTask{
