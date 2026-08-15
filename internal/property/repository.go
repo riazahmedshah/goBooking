@@ -90,7 +90,7 @@ func (pr *PropertyRepository) CreateAddress(ctx context.Context, tx pgx.Tx, payl
 func (pr *PropertyRepository) GetAllProperties(ctx context.Context) ([]*Property, error) {
 	stmt := `
 		SELECT
-			id, title, sub_title, price, host_id, max_guests, created_at, updated_at
+			id, title, sub_title, price, host_id, max_guests, images, created_at, updated_at
 		FROM
 			properties
 	`
