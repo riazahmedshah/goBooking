@@ -20,28 +20,29 @@ func NewPropertyRepository(server *server.Server) *PropertyRepository {
 	return &PropertyRepository{server: server}
 }
 
-func (pr *PropertyRepository) Createproperty(ctx context.Context, hostID string, payload *CreatePropertyPayload) (*Property, error) {
+func (pr *PropertyRepository) Createproperty(ctx context.Context, tx pgx.Tx, hostID string, payload *CreatePropertyPayload) (*Property, error) {
 	stmt := `
 		INSERT INTO properties(
-			host_id, title, sub_title, max_guests, price
+			host_id, title, sub_title, max_guests, price, images
 		)
 		VALUES (
-			@host_id, @title, @sub_title, @max_guests, @price
+			@host_id, @title, @sub_title, @max_guests, @price, @images
 		)
 		RETURNING *
 	`
 
-	rows, err := pr.server.DB.Query(ctx, stmt, pgx.NamedArgs{
+	rows, err := tx.Query(ctx, stmt, pgx.NamedArgs{
 		"host_id":    hostID,
 		"title":      payload.Title,
 		"sub_title":  payload.SubTitle,
 		"max_guests": payload.MaxGuests,
 		"price":      payload.Price,
+		"images":     payload.ImageURLs,
 	})
 
 	if err != nil {
 		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" { // Unique key violation
 			return nil, errs.ErrPropertyTitleExists
 		}
 
@@ -54,6 +55,36 @@ func (pr *PropertyRepository) Createproperty(ctx context.Context, hostID string,
 	}
 
 	return &propertyItem, nil
+}
+
+func (pr *PropertyRepository) CreateAddress(ctx context.Context, tx pgx.Tx, payload *CreateAddressPayload) (*Address, error) {
+	stmt := `
+		INSERT INTO addresses (country, state, pincode, city, area, property_id)
+		VALUES (@country, @state, @pincode, @city, @area, @property_id)
+		RETURNING *
+	`
+
+	args := pgx.NamedArgs{
+		"country":     payload.Country,
+		"state":       payload.State,
+		"pincode":     payload.Pincode,
+		"city":        payload.City,
+		"area":        payload.Area,
+		"property_id": payload.PropertyID,
+	}
+
+	rows, err := tx.Query(ctx, stmt, args)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute create address query: %w", err)
+	}
+	defer rows.Close()
+
+	address, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Address])
+	if err != nil {
+		return nil, fmt.Errorf("failed to collect row from table:addresses: %w", err)
+	}
+
+	return &address, nil
 }
 
 func (pr *PropertyRepository) GetAllProperties(ctx context.Context) ([]*Property, error) {

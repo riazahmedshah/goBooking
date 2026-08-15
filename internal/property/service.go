@@ -29,17 +29,37 @@ func NewPropertyService(server *server.Server, propertyRepo *PropertyRepository)
 	}
 }
 
-func (ps *PropertyService) CreateProperty(ctx context.Context, hostID string, payload *CreatePropertyPayload) (*Property, error) {
-	property, err := ps.propertyRepo.Createproperty(ctx, hostID, payload)
+func (ps *PropertyService) CreateProperty(ctx context.Context, hostID string, payload *CreatePropertyAndAddressPayload) (*PropertyWithAddress, error) {
+	tx, err := ps.server.DB.Begin(ctx)
+	if err != nil {
+		return nil, errs.New(http.StatusInternalServerError, msgCreatePropertyFailed, err)
+	}
+	defer tx.Rollback(ctx)
+
+	property, err := ps.propertyRepo.Createproperty(ctx, tx, hostID, &payload.Property)
 	if err != nil {
 		if errors.Is(err, errs.ErrPropertyTitleExists) {
 			return nil, err
 		}
-
 		return nil, errs.New(http.StatusInternalServerError, msgCreatePropertyFailed, err)
 	}
 
-	return property, nil
+	payload.Address.PropertyID = property.ID
+	address, err := ps.propertyRepo.CreateAddress(ctx, tx, &payload.Address)
+	if err != nil {
+		return nil, errs.New(http.StatusInternalServerError, msgCreatePropertyFailed, err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, errs.New(http.StatusInternalServerError, msgCreatePropertyFailed, err)
+	}
+
+	propertyWithAddress := &PropertyWithAddress{
+		Property: *property,
+		Address:  *address,
+	}
+
+	return propertyWithAddress, nil
 }
 
 func (ps *PropertyService) GetAllProperties(ctx context.Context) ([]*Property, error) {

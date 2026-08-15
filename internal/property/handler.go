@@ -21,7 +21,7 @@ func NewPropertyHandler(server *server.Server, propertyService *PropertyService)
 
 func (ph *PropertyHandler) CreateProperty(c echo.Context) error {
 	userID, _ := c.Get("userID").(string)
-	var payload CreatePropertyPayload
+	var payload CreatePropertyAndAddressPayload
 
 	if err := c.Bind(&payload); err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "invalid request payload")

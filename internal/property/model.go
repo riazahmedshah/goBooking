@@ -9,6 +9,7 @@ type Property struct {
 	Price     *float64   `json:"price" db:"price"`
 	HostID    string     `json:"hostId" db:"host_id"`
 	MaxGuests *int       `json:"maxGuests" db:"max_guests"`
+	ImageURLs []string   `json:"imageUrls" db:"images"`
 	CreatedAt *time.Time `json:"createdAt" db:"created_at"`
 	UpdatedAt *time.Time `json:"updatedAt" db:"updated_at"`
 }
@@ -32,4 +33,21 @@ type MonthAvailability struct {
 	Month int               `json:"month"`
 	Year  int               `json:"year"`
 	Days  []DayAvailability `json:"days"`
+}
+
+type Address struct {
+	ID         string  `json:"id" db:"id"`
+	Country    string  `json:"country" db:"country"`
+	State      string  `json:"state" db:"state"`
+	Pincode    string  `json:"pincode" db:"pincode"`
+	City       *string `json:"city" db:"city"`
+	Area       string  `json:"area" db:"area"`
+	PropertyID *string `json:"propertyId" db:"property_id"`
+	// CreatedAt  *time.Time `json:"createdAt" db:"created_at"`
+	// UpdatedAt  *time.Time `json:"updatedAt" db:"updated_at"`
+}
+
+type PropertyWithAddress struct {
+	Property Property `json:"property"`
+	Address  Address  `json:"address"`
 }

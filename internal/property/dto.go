@@ -2,14 +2,29 @@ package property
 
 import "github.com/go-playground/validator/v10"
 
+type CreateAddressPayload struct {
+	Country    string  `json:"country" validate:"required"`
+	State      string  `json:"state" validate:"required"`
+	Pincode    string  `json:"pincode" validate:"required"`
+	City       *string `json:"city"`
+	Area       string  `json:"area" validate:"required"`
+	PropertyID string  `json:"propertyId" validate:"omitempty"`
+}
+
 type CreatePropertyPayload struct {
 	Title     string   `json:"title" validate:"required,min=1,max=255"`
 	SubTitle  *string  `json:"subTitle" validate:"omitempty,max=1000"`
 	Price     *float64 `json:"price" validate:"required,min=0"`
 	MaxGuests *int     `json:"maxGuests" validate:"omitempty,min=1"`
+	ImageURLs []string `json:"imageUrls"`
 }
 
-func (p *CreatePropertyPayload) Validate() error {
+type CreatePropertyAndAddressPayload struct {
+	Property CreatePropertyPayload `json:"property" validate:"required"`
+	Address  CreateAddressPayload  `json:"address" validate:"required"`
+}
+
+func (p *CreatePropertyAndAddressPayload) Validate() error {
 	validate := validator.New()
 	return validate.Struct(p)
 }
