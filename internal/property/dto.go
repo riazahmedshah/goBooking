@@ -42,4 +42,28 @@ func (p *UpdatePropertyPayload) Validate() error {
 	return validate.Struct(p)
 }
 
+type HostResponse struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type AddressResponse struct {
+	Country string  `json:"country"`
+	State   string  `json:"state"`
+	Pincode string  `json:"pincode"`
+	City    *string `json:"city"`
+	Area    string  `json:"area"`
+}
+
+type PropertyDetailsResponse struct {
+	ID        string          `json:"id"`
+	Title     string          `json:"title"`
+	SubTitle  *string         `json:"subTitle"`
+	Price     float64         `json:"price"`
+	MaxGuests int             `json:"maxGuests"`
+	Images    []string        `json:"images"`
+	Host      HostResponse    `json:"host"`
+	Address   AddressResponse `json:"address"`
+}
+
 // TODO: other payloads...

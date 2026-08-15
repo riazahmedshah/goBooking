@@ -2,6 +2,30 @@ package property
 
 import "time"
 
+type PropertyDetailsRaw struct {
+	// Property Details
+	ID        string    `json:"id" db:"id"`
+	Title     string    `json:"title" db:"title"`
+	SubTitle  *string   `json:"subTitle" db:"sub_title"`
+	Price     float64   `json:"price" db:"price"`
+	MaxGuests int       `json:"maxGuests" db:"max_guests"`
+	Images    []string  `json:"images" db:"images"`
+	CreatedAt time.Time `json:"createdAt" db:"created_at"`
+	UpdatedAt time.Time `json:"updatedAt" db:"updated_at"`
+
+	// Host Details (users table)
+	HostID   string `json:"hostId" db:"host_id"`
+	HostName string `json:"hostName" db:"host_name"`
+
+	// Address Details (addresses table)
+	AddressID string  `json:"addressId" db:"address_id"`
+	Country   string  `json:"country" db:"country"`
+	State     string  `json:"state" db:"state"`
+	Pincode   string  `json:"pincode" db:"pincode"`
+	City      *string `json:"city" db:"city"`
+	Area      string  `json:"area" db:"area"`
+}
+
 type Property struct {
 	ID        string     `json:"id" db:"id"`
 	Title     string     `json:"title" db:"title"`

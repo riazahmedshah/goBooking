@@ -108,14 +108,16 @@ func (pr *PropertyRepository) GetAllProperties(ctx context.Context) ([]*Property
 	return properties, nil
 }
 
-func (pr *PropertyRepository) GetPropertyByID(ctx context.Context, propertyID string) (*Property, error) {
+func (pr *PropertyRepository) GetPropertyByID(ctx context.Context, propertyID string) (*PropertyDetailsRaw, error) {
 	stmt := `
 		SELECT
-			id, title, sub_title, price, host_id, max_guests, created_at, updated_at
-		FROM
-			properties
-		WHERE
-			id = @id
+			p.id, p.title, p.sub_title, p.price, p.host_id, p.max_guests, p.images, p.created_at, p.updated_at,
+			u.first_name AS host_name,
+			a.id AS address_id, a.country, a.state, a.pincode, a.city, a.area
+		FROM properties p
+		INNER JOIN users u ON p.host_id = u.id
+		LEFT JOIN addresses a ON p.id = a.property_id
+		WHERE p.id = @id
 		`
 
 	rows, err := pr.server.DB.Query(ctx, stmt, pgx.NamedArgs{
@@ -126,7 +128,7 @@ func (pr *PropertyRepository) GetPropertyByID(ctx context.Context, propertyID st
 		return nil, fmt.Errorf("failed to execute get property by id for property_id %v: %w", propertyID, err)
 	}
 
-	propertyItem, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Property])
+	propertyItem, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[PropertyDetailsRaw])
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

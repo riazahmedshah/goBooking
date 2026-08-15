@@ -71,8 +71,8 @@ func (ps *PropertyService) GetAllProperties(ctx context.Context) ([]*Property, e
 	return properties, nil
 }
 
-func (ps *PropertyService) GetPropertyByID(ctx context.Context, propertyID string) (*Property, error) {
-	property, err := ps.propertyRepo.GetPropertyByID(ctx, propertyID)
+func (ps *PropertyService) GetPropertyByID(ctx context.Context, propertyID string) (*PropertyDetailsResponse, error) {
+	raw, err := ps.propertyRepo.GetPropertyByID(ctx, propertyID)
 	if err != nil {
 		if errors.Is(err, errs.ErrPropertyNotFound) {
 			return nil, err
@@ -81,7 +81,27 @@ func (ps *PropertyService) GetPropertyByID(ctx context.Context, propertyID strin
 		return nil, errs.New(http.StatusInternalServerError, msgGetPropertyByIDFailed, err)
 	}
 
-	return property, nil
+	response := &PropertyDetailsResponse{
+		ID:        raw.ID,
+		Title:     raw.Title,
+		SubTitle:  raw.SubTitle,
+		Price:     raw.Price,
+		MaxGuests: raw.MaxGuests,
+		Images:    raw.Images,
+		Host: HostResponse{
+			ID:   raw.HostID,
+			Name: raw.HostName,
+		},
+		Address: AddressResponse{
+			Country: raw.Country,
+			State:   raw.State,
+			Pincode: raw.Pincode,
+			City:    raw.City,
+			Area:    raw.Area,
+		},
+	}
+
+	return response, nil
 }
 
 func (ps *PropertyService) GetPropertyAvailability(ctx context.Context, propertyID string) ([]MonthAvailability, error) {
