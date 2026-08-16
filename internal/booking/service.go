@@ -35,6 +35,8 @@ func NewBookingService(server *server.Server, bookingRepo *BookingRepository, no
 
 func (b *BookingService) CreateBooking(ctx context.Context, userID string, payload *CreateBookingPayload) (any, error) {
 
+	// check for availability of the property for the given dates
+
 	// Example key: "hold:property:prop_123:dates:2026-08-15_2026-08-17"
 	holdKey := fmt.Sprintf("hold:property:%s:dates:%s_%s",
 		*payload.PropertyID,
@@ -47,7 +49,7 @@ func (b *BookingService) CreateBooking(ctx context.Context, userID string, paylo
 		Key(holdKey).
 		Value(userID). // UserID or Booking Ref as value
 		Nx().          // Set Only If Not Exists
-		Ex(59 * time.Second).
+		Ex(time.Minute).
 		Build()
 
 	res := b.server.RedisClient.Do(ctx, cmd)
@@ -89,7 +91,7 @@ func (b *BookingService) CreateBooking(ctx context.Context, userID string, paylo
 
 }
 
-func (b *BookingService) ConfirmBooking(ctx context.Context, key string, userID string, payload *ConfirmBookingPayload) (any, error) {
+func (b *BookingService) ConfirmBooking(ctx context.Context, key string, userID string) (*Booking, error) {
 
 	tx, err := b.server.DB.Begin(ctx)
 	if err != nil {
@@ -106,12 +108,16 @@ func (b *BookingService) ConfirmBooking(ctx context.Context, key string, userID 
 		return nil, errs.ErrDuplicateBooking
 	}
 
-	booking, err := b.bookingRepo.ConfirmBooking(ctx, tx, payload)
+	booking, err := b.bookingRepo.ConfirmBooking(ctx, tx, idempotencyData.BookingID)
 	if err != nil {
 		return nil, errs.New(http.StatusInternalServerError, msgBookingFailed, err)
 	}
 
 	if err := b.bookingRepo.FinalizeIdempotencyKey(ctx, tx, key); err != nil {
+		return nil, errs.New(http.StatusInternalServerError, msgBookingFailed, err)
+	}
+
+	if err := b.bookingRepo.UpdatePropertyAvailability(ctx, tx, booking.PropertyID, booking.ID, booking.CheckIn, booking.CheckOut); err != nil {
 		return nil, errs.New(http.StatusInternalServerError, msgBookingFailed, err)
 	}
 

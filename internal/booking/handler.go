@@ -40,13 +40,8 @@ func (bh *BookingHandler) CreateBooking(c echo.Context) error {
 func (bh *BookingHandler) ConfirmBooking(c echo.Context) error {
 	userID, _ := c.Get("userID").(string)
 	idempotencyKey := c.Param("idempotency_key")
-	var payload ConfirmBookingPayload
 
-	if err := c.Bind(&payload); err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "invalid request payload")
-	}
-
-	booking, err := bh.bookingService.ConfirmBooking(c.Request().Context(), idempotencyKey, userID, &payload)
+	booking, err := bh.bookingService.ConfirmBooking(c.Request().Context(), idempotencyKey, userID)
 	if err != nil {
 		slog.Error("failed to confirm booking", "error", err)
 		return echo.NewHTTPError(http.StatusInternalServerError, "internal server error")

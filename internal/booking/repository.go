@@ -2,9 +2,12 @@ package booking
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/riazahmedshah/go-booking/internal/errs"
 	"github.com/riazahmedshah/go-booking/internal/server"
 )
 
@@ -27,13 +30,20 @@ func (r *BookingRepository) CreateBooking(ctx context.Context, userID string, pa
 			check_in,
 			check_out
 		)
-		VALUES (
+		SELECT
 			@user_id, 
 			@property_id, 
 			@total_price, 
 			@check_in,
 			@check_out
-		)
+		FROM property_availability pa
+		WHERE 
+			pa.property_id = @property_id
+			AND pa.date BETWEEN @check_in AND @check_out
+			AND pa.is_available = true
+		GROUP BY pa.property_id
+		-- Dynamic check: Available rows ka count exact checkin-checkout days ke equal hona chahiye!
+		HAVING COUNT(*) = (@check_out::date - @check_in::date + 1)
 		RETURNING *
 	`
 
@@ -51,6 +61,9 @@ func (r *BookingRepository) CreateBooking(ctx context.Context, userID string, pa
 
 	bookingItem, err := pgx.CollectOneRow(rows, pgx.RowToStructByName[Booking])
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errs.ErrPropertyUnavailable
+		}
 		return nil, fmt.Errorf("failed to collect row from table:bookings for user_id=%v property_id=%v: %w", userID, *payload.PropertyID, err)
 	}
 
@@ -87,7 +100,7 @@ func (r *BookingRepository) CreateIdempotencyKey(ctx context.Context, idemKey st
 	return &idemKeyItem, nil
 }
 
-func (r *BookingRepository) ConfirmBooking(ctx context.Context, tx pgx.Tx, payload *ConfirmBookingPayload) (*Booking, error) {
+func (r *BookingRepository) ConfirmBooking(ctx context.Context, tx pgx.Tx, bookingID string) (*Booking, error) {
 	stmt := `
 		UPDATE bookings
 		SET status = @status
@@ -96,15 +109,15 @@ func (r *BookingRepository) ConfirmBooking(ctx context.Context, tx pgx.Tx, paylo
 	`
 	rows, err := tx.Query(ctx, stmt, pgx.NamedArgs{
 		"status": "confirmed",
-		"id":     payload.BookingID,
+		"id":     bookingID,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute confirm booking query for id=%s: %w", payload.BookingID, err)
+		return nil, fmt.Errorf("failed to execute confirm booking query for id=%s: %w", bookingID, err)
 	}
 
 	data, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[Booking])
 	if err != nil {
-		return nil, fmt.Errorf("failed to collect row from table:bookings for id=%s: %w", payload.BookingID, err)
+		return nil, fmt.Errorf("failed to collect row from table:bookings for id=%s: %w", bookingID, err)
 	}
 
 	return &data, nil
@@ -154,4 +167,30 @@ func (r *BookingRepository) GetIdempotencyKeyWithLock(ctx context.Context, tx pg
 	}
 
 	return &idemData, nil
+}
+
+func (r *BookingRepository) UpdatePropertyAvailability(ctx context.Context, tx pgx.Tx, propertyID string, bookingID string, checkIn, checkOut time.Time) error {
+	stmt := `
+		UPDATE property_availability
+		SET 
+			booking_id = @booking_id, 
+			is_available = false,
+			updated_at = NOW()
+		WHERE 
+			property_id = @property_id 
+			AND date BETWEEN @check_in AND @check_out
+			AND is_available = true
+	`
+
+	_, err := tx.Exec(ctx, stmt, pgx.NamedArgs{
+		"property_id": propertyID,
+		"booking_id":  bookingID,
+		"check_in":    checkIn,
+		"check_out":   checkOut,
+	})
+
+	if err != nil {
+		return fmt.Errorf("failed to execute update property_availability query for property_id=%s booking_id=%s: %w", propertyID, bookingID, err)
+	}
+	return nil
 }

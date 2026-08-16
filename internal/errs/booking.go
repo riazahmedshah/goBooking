@@ -26,4 +26,10 @@ var (
 		"booking is already finalized",
 		nil,
 	)
+
+	ErrPropertyUnavailable = New(
+		http.StatusConflict,
+		"property is unavailable for the selected dates",
+		nil,
+	)
 )
