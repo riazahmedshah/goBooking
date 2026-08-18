@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/go-playground/validator/v10"
@@ -65,7 +65,8 @@ func validateConfig(cnf *Config) error {
 
 func LoadConfig() (*Config, error) {
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using system environment variables")
+		slog.Error("No .env file found, using system environment variables")
+		os.Exit(1)
 	}
 
 	conf := &Config{

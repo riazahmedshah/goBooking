@@ -42,26 +42,6 @@ func New(cfg *config.Config) (*Server, error) {
 	if err := redisClient.Do(ctx, redisClient.B().Ping().Build()).Error(); err != nil {
 		return nil, fmt.Errorf("redis ping failed: %w", err)
 	}
-	// pingCmd := redisClient.B().Ping().Build()
-	// err = redisClient.Do(ctx, pingCmd).Error()
-	// if err != nil {
-	// 	return nil, fmt.Errorf("redis ping failed: %w", err)
-	// }
-
-	// locker, err := rueidislock.NewLocker(rueidislock.LockerOption{
-	// 	ClientOption: rueidis.ClientOption{
-	// 		InitAddress: []string{cfg.Redis.Address},
-	// 		Password:    cfg.Redis.Password,
-	// 	},
-	// 	KeyMajority:    1,
-	// 	NoLoopTracking: true,
-	// 	KeyValidity:    5 * time.Minute,
-	// 	TryNextAfter:   20 * time.Millisecond,
-	// })
-
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to initialize Redis client: %w", err)
-	// }
 
 	server := &Server{
 		Config:      cfg,
